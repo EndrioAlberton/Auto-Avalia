@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function hasAnyRole(roles) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles;
+    }
+
+    function belongsToSchool(schoolId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId == schoolId;
+    }
+
+    // ── Usuários ──────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid == userId ||
+                       hasAnyRole(['admin', 'secretaria']));
+      allow delete: if hasRole('admin');
+    }
+
+    // ── Escolas ───────────────────────────────────────────────────────────────
+    match /schools/{schoolId} {
+      allow read: if true; // Público — estudantes precisam ver lista de escolas
+      allow create: if hasAnyRole(['secretaria', 'admin', 'gestor']);
+      allow update: if (hasRole('gestor') && belongsToSchool(schoolId)) ||
+                       hasAnyRole(['secretaria', 'admin']);
+      allow delete: if hasAnyRole(['secretaria', 'admin']);
+    }
+
+    // ── Questionários ─────────────────────────────────────────────────────────
+    match /questionnaires/{questionnaireId} {
+      allow read: if true; // Público — estudantes precisam ler o questionário
+      allow create: if isAuthenticated(); // Qualquer usuário autenticado pode criar (para seed)
+      allow update, delete: if hasAnyRole(['secretaria', 'admin']);
+    }
+
+    // ── Respostas (professores — autenticadas) ────────────────────────────────
+    match /responses/{responseId} {
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId ||
+                     hasAnyRole(['gestor', 'secretaria', 'admin']));
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if hasRole('admin');
+    }
+
+    // ── Respostas anônimas (estudantes) ───────────────────────────────────────
+    match /anonymous_responses/{responseId} {
+      allow read: if hasAnyRole(['gestor', 'secretaria', 'admin']);
+      allow create: if true; // Anônimo — não exige autenticação
+      allow delete: if hasRole('admin');
+    }
+
+    // ── Relatórios ────────────────────────────────────────────────────────────
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId ||
+                     hasAnyRole(['gestor', 'secretaria', 'admin']));
+      allow write: if hasAnyRole(['gestor', 'secretaria', 'admin']);
+    }
+
+    // ── Convites ──────────────────────────────────────────────────────────────
+    match /invitations/{invitationId} {
+      allow read: if isAuthenticated();
+      allow create: if hasAnyRole(['gestor', 'secretaria', 'admin']);
+      allow update: if isAuthenticated();
+      allow delete: if hasAnyRole(['gestor', 'secretaria', 'admin']);
+    }
+
+    // ── Materiais de apoio ────────────────────────────────────────────────────
+    match /support_materials/{materialId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Para seed automático
+      allow update, delete: if hasAnyRole(['secretaria', 'admin']);
+    }
+  }
+}
