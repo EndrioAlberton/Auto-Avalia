@@ -26,6 +26,11 @@ import {
 } from '../types';
 import { PROFESSOR_QUESTIONS, DEFAULT_SUPPORT_MATERIALS } from '../data/questionnaireData';
 
+// ── Utilitário: remove campos undefined antes de salvar no Firestore ──────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const stripUndefined = (obj: Record<string, any>): Record<string, any> =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ESCOLAS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -34,7 +39,7 @@ export const createSchool = async (
   schoolData: Omit<School, 'id' | 'createdAt' | 'updatedAt'>,
 ): Promise<string> => {
   const ref = doc(collection(db, 'schools'));
-  await setDoc(ref, { ...schoolData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  await setDoc(ref, stripUndefined({ ...schoolData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
   return ref.id;
 };
 
@@ -121,7 +126,7 @@ export const createQuestionnaire = async (
   data: Omit<Questionnaire, 'id' | 'createdAt' | 'updatedAt'>,
 ): Promise<string> => {
   const ref = doc(collection(db, 'questionnaires'));
-  await setDoc(ref, { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  await setDoc(ref, stripUndefined({ ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
   return ref.id;
 };
 
@@ -145,13 +150,22 @@ export const getAllQuestionnaires = async (): Promise<Questionnaire[]> => {
 };
 
 export const getActiveQuestionnaires = async (role: UserRole): Promise<Questionnaire[]> => {
-  const q = query(
-    collection(db, 'questionnaires'),
-    where('active', '==', true),
-    where('targetRole', '==', role),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Questionnaire));
+  try {
+    // Query composta — exige índice composto no Firestore
+    const q = query(
+      collection(db, 'questionnaires'),
+      where('active', '==', true),
+      where('targetRole', '==', role),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Questionnaire));
+  } catch {
+    // Fallback: busca todos e filtra em memória (índice ainda não publicado)
+    const snap = await getDocs(collection(db, 'questionnaires'));
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as Questionnaire))
+      .filter(q => q.active && q.targetRole === role);
+  }
 };
 
 /**
@@ -192,28 +206,53 @@ export const submitResponse = async (
   data: Omit<QuestionnaireResponse, 'id' | 'completedAt'>,
 ): Promise<string> => {
   const ref = doc(collection(db, 'responses'));
-  await setDoc(ref, { ...data, completedAt: serverTimestamp() });
+  await setDoc(ref, stripUndefined({ ...data, completedAt: serverTimestamp() }));
   return ref.id;
 };
 
+const sortByCompletedAtDesc = (docs: QuestionnaireResponse[]) =>
+  docs.sort((a, b) => {
+    const ta = (a.completedAt as any)?.seconds ?? 0;
+    const tb = (b.completedAt as any)?.seconds ?? 0;
+    return tb - ta;
+  });
+
 export const getUserResponses = async (userId: string): Promise<QuestionnaireResponse[]> => {
-  const q = query(
-    collection(db, 'responses'),
-    where('userId', '==', userId),
-    orderBy('completedAt', 'desc'),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
+  try {
+    const q = query(
+      collection(db, 'responses'),
+      where('userId', '==', userId),
+      orderBy('completedAt', 'desc'),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
+  } catch {
+    // Fallback: busca sem orderBy (evita erro de índice ainda em construção)
+    const q = query(collection(db, 'responses'), where('userId', '==', userId));
+    const snap = await getDocs(q);
+    return sortByCompletedAtDesc(
+      snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse))
+    );
+  }
 };
 
 export const getSchoolResponses = async (schoolId: string): Promise<QuestionnaireResponse[]> => {
-  const q = query(
-    collection(db, 'responses'),
-    where('schoolId', '==', schoolId),
-    orderBy('completedAt', 'desc'),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
+  try {
+    const q = query(
+      collection(db, 'responses'),
+      where('schoolId', '==', schoolId),
+      orderBy('completedAt', 'desc'),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
+  } catch {
+    // Fallback: busca sem orderBy
+    const q = query(collection(db, 'responses'), where('schoolId', '==', schoolId));
+    const snap = await getDocs(q);
+    return sortByCompletedAtDesc(
+      snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse))
+    );
+  }
 };
 
 /** Respostas de uma escola para um questionário específico */
@@ -235,16 +274,31 @@ export const getUserLatestResponse = async (
   userId: string,
   questionnaireId: string,
 ): Promise<QuestionnaireResponse | null> => {
-  const q = query(
-    collection(db, 'responses'),
-    where('userId', '==', userId),
-    where('questionnaireId', '==', questionnaireId),
-    orderBy('completedAt', 'desc'),
-    limit(1),
-  );
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  return { id: snap.docs[0].id, ...snap.docs[0].data() } as QuestionnaireResponse;
+  try {
+    const q = query(
+      collection(db, 'responses'),
+      where('userId', '==', userId),
+      where('questionnaireId', '==', questionnaireId),
+      orderBy('completedAt', 'desc'),
+      limit(1),
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    return { id: snap.docs[0].id, ...snap.docs[0].data() } as QuestionnaireResponse;
+  } catch {
+    // Fallback sem orderBy
+    const q = query(
+      collection(db, 'responses'),
+      where('userId', '==', userId),
+      where('questionnaireId', '==', questionnaireId),
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const docs = sortByCompletedAtDesc(
+      snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse))
+    );
+    return docs[0] ?? null;
+  }
 };
 
 /** Respostas de toda a rede (networkId) */
@@ -269,11 +323,11 @@ export interface StudentResponseData {
 
 export const saveStudentResponse = async (data: StudentResponseData): Promise<string> => {
   const ref = doc(collection(db, 'anonymous_responses'));
-  await setDoc(ref, {
+  await setDoc(ref, stripUndefined({
     ...data,
     anonymousId: ref.id,
     completedAt: serverTimestamp(),
-  });
+  }));
   return ref.id;
 };
 
@@ -301,13 +355,13 @@ export const createInvitation = async (
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  await setDoc(ref, {
+  await setDoc(ref, stripUndefined({
     ...data,
     token,
     status: 'pending',
     createdAt: serverTimestamp(),
     expiresAt: Timestamp.fromDate(expiresAt),
-  });
+  }));
   return ref.id;
 };
 
@@ -345,6 +399,25 @@ export const acceptInvitation = async (id: string): Promise<void> => {
   await updateDoc(doc(db, 'invitations', id), { status: 'accepted' });
 };
 
+/** Convites pendentes para um e-mail específico (para o professor ver na home) */
+export const getPendingInvitationsByEmail = async (email: string): Promise<Invitation[]> => {
+  try {
+    const q = query(
+      collection(db, 'invitations'),
+      where('email', '==', email),
+      where('status', '==', 'pending'),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invitation));
+  } catch {
+    // Fallback sem índice composto
+    const snap = await getDocs(collection(db, 'invitations'));
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as Invitation))
+      .filter(i => i.email === email && i.status === 'pending');
+  }
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MATERIAIS DE APOIO
 // ══════════════════════════════════════════════════════════════════════════════
@@ -362,7 +435,7 @@ export const createSupportMaterial = async (
   data: Omit<SupportMaterial, 'id' | 'createdAt'>,
 ): Promise<string> => {
   const ref = doc(collection(db, 'support_materials'));
-  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  await setDoc(ref, stripUndefined({ ...data, createdAt: serverTimestamp() }));
   return ref.id;
 };
 

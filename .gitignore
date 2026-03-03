@@ -25,11 +25,17 @@ dist-ssr
 *.sw?
 
 # Firebase
-.firebase
+.firebase/
 .firebaserc
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# Firebase Admin SDK — service account keys (NUNCA commitar)
+serviceAccountKey.json
+*serviceAccount*.json
+*service-account*.json
+*.serviceAccount.json
 
 # Environment variables
 .env
@@ -37,6 +43,15 @@ ui-debug.log
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+
+# Chaves e certificados privados
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
 
 # Build files
 build

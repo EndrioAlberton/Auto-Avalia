@@ -4,15 +4,15 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
-// Credenciais do Firebase (projeto: buscarferramentasensino)
+// Credenciais do Firebase (projeto: ferramenteapoioensino)
 const firebaseConfig = {
-  apiKey: "AIzaSyCEMUjMAaKQEE7GGViLgrP53IzsgL-HQgI",
-  authDomain: "buscarferramentasensino.firebaseapp.com",
-  projectId: "buscarferramentasensino",
-  storageBucket: "buscarferramentasensino.appspot.com",
-  messagingSenderId: "302635372121",
-  appId: "1:302635372121:web:18b6f1ed60b2266586ab48",
-  measurementId: "G-3PJL8BPSKT"
+  apiKey: "AIzaSyDssywCZpu_bFr0IlSTAJUrbpSR0l82lF8",
+  authDomain: "ferramenteapoioensino.firebaseapp.com",
+  projectId: "ferramenteapoioensino",
+  storageBucket: "ferramenteapoioensino.firebasestorage.app",
+  messagingSenderId: "984747057815",
+  appId: "1:984747057815:web:e0462775e2dc3ed76dffd2",
+  measurementId: "G-9VBQRND03Z"
 };
 
 // Inicializa Firebase

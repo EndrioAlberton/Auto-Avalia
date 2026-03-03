@@ -25,7 +25,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   getSchool, updateSchool, createSchool, getTeachersBySchool,
   getSchoolResponses, getOrSeedQuestionnaire, createInvitation, getSchoolInvitations,
-  deleteInvitation, getStudentResponsesBySchool,
+  deleteInvitation, getStudentResponsesBySchool, updateUserProfile,
 } from '../../services/firestoreService';
 import {
   responsesToAvgScores, classifyTeacherResponseStatus, groupBySegment,
@@ -163,10 +163,11 @@ const GestorHome: React.FC<{ onNavigate: (p: string) => void }> = ({ onNavigate 
 // ── GERENCIAR ESCOLA ──────────────────────────────────────────────────────────
 
 const GerenciarEscola: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
   const [school, setSchool] = useState<Partial<School>>({});
   const [creating, setCreating] = useState(false);
 
@@ -192,20 +193,25 @@ const GerenciarEscola: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentUser) return;
+    setError('');
     try {
       setSaving(true);
       if (creating) {
+        // 1. Cria a escola no Firestore
         const id = await createSchool({
           name: school.name || '',
           networkId: currentUser.networkId || 'rede-padrao',
           region: school.region,
           district: school.district,
           gestorId: currentUser.uid,
-          segments: school.segments || [],
+          segments: [],
           address: school.address,
           contact: school.contact,
-        } as any);
-        // Atualiza o schoolId do gestor
+        });
+        // 2. Salva o schoolId no perfil do gestor no Firestore
+        await updateUserProfile(currentUser.uid, { schoolId: id });
+        // 3. Atualiza o contexto para que currentUser.schoolId seja imediato
+        await refreshUser();
         setSchool(prev => ({ ...prev, id }));
         setCreating(false);
       } else if (school.id) {
@@ -218,7 +224,15 @@ const GerenciarEscola: React.FC = () => {
         });
       }
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => setSaved(false), 4000);
+    } catch (err: any) {
+      // Mostra o erro real do Firebase para facilitar diagnóstico
+      const msg = err?.message || String(err);
+      if (msg.includes('permission-denied') || msg.includes('Missing or insufficient')) {
+        setError('Permissão negada pelo Firebase. Verifique se seu usuário tem o perfil "gestor" configurado corretamente no Firestore.');
+      } else {
+        setError(`Erro ao salvar: ${msg}`);
+      }
     } finally {
       setSaving(false);
     }
@@ -231,8 +245,9 @@ const GerenciarEscola: React.FC = () => {
       <Typography variant="h4" fontWeight={700} gutterBottom>
         {creating ? 'Criar Escola' : 'Configurar Escola'}
       </Typography>
-      {saved && <Alert severity="success" sx={{ mb: 3 }}>✅ Dados da escola salvos no Firebase!</Alert>}
-      {creating && <Alert severity="info" sx={{ mb: 3 }}>Configure os dados da sua escola para começar a usar a plataforma.</Alert>}
+      {saved && <Alert severity="success" sx={{ mb: 3 }}>✅ Escola salva com sucesso no Firebase!</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
+      {creating && !error && <Alert severity="info" sx={{ mb: 3 }}>Configure os dados da sua escola para começar a usar a plataforma.</Alert>}
 
       <Card elevation={2} sx={{ p: 3, maxWidth: 700 }}>
         <Grid container spacing={2}>
@@ -240,10 +255,10 @@ const GerenciarEscola: React.FC = () => {
             <TextField fullWidth label="Nome da Escola *" name="name" value={school.name || ''} onChange={handleChange} required />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField fullWidth label="Regional / Região" name="region" value={school.region || ''} onChange={handleChange} />
+            <TextField fullWidth label="Estado" name="region" value={school.region || ''} onChange={handleChange} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField fullWidth label="Distrito / Zona" name="district" value={school.district || ''} onChange={handleChange} />
+            <TextField fullWidth label="Cidade" name="district" value={school.district || ''} onChange={handleChange} />
           </Grid>
           <Grid size={{ xs: 12 }}>
             <TextField fullWidth label="Endereço" name="address" value={school.address || ''} onChange={handleChange} />

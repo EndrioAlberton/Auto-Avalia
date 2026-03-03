@@ -9,11 +9,11 @@ import {
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon, Assignment as AssignmentIcon,
-  BarChart as ChartIcon, Person as PersonIcon, Help as HelpIcon,
+  BarChart as ChartIcon, Person as PersonIcon,
   CheckCircle, RadioButtonUnchecked, TrendingUp,
-  Book, VideoLibrary, Article, ArrowForward, ArrowBack, Send,
+  ArrowForward, ArrowBack, Send,
   Timeline, CompareArrows, EmojiEvents, ExpandMore,
-  PlayArrow, OpenInNew,
+  PlayArrow,
 } from '@mui/icons-material';
 import { DashboardLayout, LoadingSkeletonGrid, EmptyState } from '../../components/shared';
 import {
@@ -29,10 +29,12 @@ import {
   getSchoolResponses,
   submitResponse,
   updateUserProfile,
-  getSupportMaterials,
-  seedDefaultSupportMaterials,
   getUserLatestResponse,
   getAllSchools,
+  getPendingInvitationsByEmail,
+  acceptInvitation,
+  updateInvitation,
+  getSchool,
 } from '../../services/firestoreService';
 import {
   answersToScores,
@@ -51,31 +53,54 @@ import {
   PROFESSOR_QUESTIONS,
   LIKERT_LABELS,
   LIKERT_COLORS,
+  SUBJECT_OPTIONS,
 } from '../../data/questionnaireData';
-import { Questionnaire, QuestionnaireResponse, SupportMaterial, UserRole } from '../../types';
+import { Questionnaire, QuestionnaireResponse, UserRole, Invitation } from '../../types';
 
 const DOMAIN_CHART_COLORS = ['#7c3aed', '#2563eb', '#059669', '#d97706', '#dc2626'];
 
 // ── PROFESSOR HOME ────────────────────────────────────────────────────────────
 
 const ProfessorHome: React.FC<{ onNavigate: (p: string) => void }> = ({ onNavigate }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [myResponses, setMyResponses] = useState<QuestionnaireResponse[]>([]);
   const [myScores, setMyScores] = useState<DomainScore[]>([]);
   const [alreadyAnswered, setAlreadyAnswered] = useState(false);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [schoolNames, setSchoolNames] = useState<Record<string, string>>({});
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [inviteMsg, setInviteMsg] = useState('');
 
   useEffect(() => {
     if (!currentUser) return;
     (async () => {
       try {
-        const [q, responses] = await Promise.all([
+        const [q, responses, invites] = await Promise.all([
           getOrSeedQuestionnaire(UserRole.PROFESSOR),
           getUserResponses(currentUser.uid),
+          getPendingInvitationsByEmail(currentUser.email),
         ]);
         setQuestionnaire(q);
         setMyResponses(responses);
+        setInvitations(invites);
+
+        // Busca o nome de cada escola dos convites
+        if (invites.length > 0) {
+          const names: Record<string, string> = {};
+          await Promise.all(
+            invites.map(async inv => {
+              try {
+                const school = await getSchool(inv.schoolId);
+                names[inv.schoolId] = school.name;
+              } catch {
+                names[inv.schoolId] = 'Escola não identificada';
+              }
+            })
+          );
+          setSchoolNames(names);
+        }
         if (responses.length > 0) {
           const latest = responses[0];
           const map: Record<string, number> = {};
@@ -92,6 +117,31 @@ const ProfessorHome: React.FC<{ onNavigate: (p: string) => void }> = ({ onNaviga
     })();
   }, [currentUser]);
 
+  const handleAcceptInvite = async (invite: Invitation) => {
+    if (!currentUser) return;
+    setAcceptingId(invite.id);
+    try {
+      await acceptInvitation(invite.id);
+      await updateUserProfile(currentUser.uid, { schoolId: invite.schoolId });
+      await refreshUser();
+      const schoolName = schoolNames[invite.schoolId] || 'escola';
+      setInvitations(prev => prev.filter(i => i.id !== invite.id));
+      setInviteMsg(`✅ Convite aceito! Você foi vinculado à ${schoolName}.`);
+    } catch (e: any) {
+      setInviteMsg('Erro ao aceitar convite: ' + (e?.message || e));
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
+  const handleDeclineInvite = async (inviteId: string) => {
+    try {
+      await updateInvitation(inviteId, { status: 'expired' } as any);
+      setInvitations(prev => prev.filter(i => i.id !== inviteId));
+      setInviteMsg('Convite recusado.');
+    } catch { /* ignore */ }
+  };
+
   if (loading) return <LoadingSkeletonGrid />;
 
   const overall = overallScore(myScores);
@@ -106,6 +156,44 @@ const ProfessorHome: React.FC<{ onNavigate: (p: string) => void }> = ({ onNaviga
       <Typography variant="body1" color="text.secondary" mb={3}>
         Bem-vindo ao seu espaço de autoavaliação.
       </Typography>
+
+      {/* ── Convites pendentes ── */}
+      {inviteMsg && (
+        <Alert severity={inviteMsg.startsWith('✅') ? 'success' : inviteMsg.startsWith('Erro') ? 'error' : 'info'}
+          onClose={() => setInviteMsg('')} sx={{ mb: 2 }}>
+          {inviteMsg}
+        </Alert>
+      )}
+      {invitations.map(invite => (
+        <Alert
+          key={invite.id}
+          severity="info"
+          sx={{ mb: 2, alignItems: 'center' }}
+          icon={<CheckCircle />}
+          action={
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small" variant="contained" color="success"
+                disabled={acceptingId === invite.id}
+                onClick={() => handleAcceptInvite(invite)}
+              >
+                {acceptingId === invite.id ? <CircularProgress size={16} color="inherit" /> : 'Aceitar'}
+              </Button>
+              <Button
+                size="small" variant="outlined" color="error"
+                disabled={acceptingId === invite.id}
+                onClick={() => handleDeclineInvite(invite.id)}
+              >
+                Recusar
+              </Button>
+            </Stack>
+          }
+        >
+          <strong>Convite de escola!</strong> Você foi convidado para integrar a equipe de{' '}
+          <strong>{schoolNames[invite.schoolId] || 'uma escola'}</strong>.
+          Clique em <strong>Aceitar</strong> para ser vinculado automaticamente.
+        </Alert>
+      ))}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -228,7 +316,9 @@ const ProfessorHome: React.FC<{ onNavigate: (p: string) => void }> = ({ onNaviga
 const Questionarios: React.FC = () => {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [myResponses, setMyResponses] = useState<QuestionnaireResponse[]>([]);
   const [alreadyAnswered, setAlreadyAnswered] = useState(false);
@@ -239,6 +329,7 @@ const Questionarios: React.FC = () => {
 
   const loadData = useCallback(async () => {
     if (!currentUser) return;
+    setLoadError('');
     try {
       setLoading(true);
       const [q, responses] = await Promise.all([
@@ -249,6 +340,15 @@ const Questionarios: React.FC = () => {
       setMyResponses(responses);
       const answered = await getUserLatestResponse(currentUser.uid, q.id);
       setAlreadyAnswered(!!answered);
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      if (msg.includes('permission-denied') || msg.includes('Missing or insufficient')) {
+        setLoadError('Sem permissão para carregar os questionários. Verifique se você está autenticado e se as regras do Firestore estão publicadas.');
+      } else if (msg.includes('index') || msg.includes('requires an index')) {
+        setLoadError('Índice do Firestore não encontrado. Publique as regras/índices ou aguarde a propagação no Firebase Console.');
+      } else {
+        setLoadError(`Erro ao carregar questionários: ${msg}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -256,8 +356,11 @@ const Questionarios: React.FC = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Usa as questões vindas do Firestore; fallback para as locais se o banco ainda não tiver sido populado
+  const firestoreQuestions = (questionnaire?.questions ?? PROFESSOR_QUESTIONS) as typeof PROFESSOR_QUESTIONS;
+
   const questionsForStep = (step: number) =>
-    PROFESSOR_QUESTIONS.filter(q => q.domain === DOMAINS[step].key);
+    firestoreQuestions.filter(q => q.domain === DOMAINS[step].key);
 
   const handleAnswer = (qId: string, value: number) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
@@ -270,6 +373,7 @@ const Questionarios: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!currentUser || !questionnaire) return;
+    setSubmitError('');
     try {
       setSaving(true);
       const answersArr = Object.entries(answers).map(([questionId, value]) => ({
@@ -280,19 +384,37 @@ const Questionarios: React.FC = () => {
         questionnaireId: questionnaire.id,
         userId: currentUser.uid,
         schoolId: currentUser.schoolId || 'sem-escola',
-        networkId: currentUser.networkId,
+        ...(currentUser.networkId ? { networkId: currentUser.networkId } : {}),
         answers: answersArr,
-        segment: (currentUser as any).segment?.[0],
+        segment: (currentUser as any).segment?.[0] ?? null,
       });
       setSubmitted(true);
     } catch (err: any) {
-      console.error(err);
+      const msg = err?.message || String(err);
+      if (msg.includes('permission-denied') || msg.includes('Missing or insufficient')) {
+        setSubmitError('Permissão negada pelo Firebase. Verifique se você está autenticado.');
+      } else {
+        setSubmitError(`Erro ao enviar: ${msg}`);
+      }
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) return <Box display="flex" justifyContent="center" mt={8}><CircularProgress /></Box>;
+
+  if (loadError) {
+    return (
+      <Box>
+        <Typography variant="h4" fontWeight={700} gutterBottom>Questionários</Typography>
+        <Alert severity="error" sx={{ mb: 2 }} action={
+          <Button color="inherit" size="small" onClick={loadData}>Tentar novamente</Button>
+        }>
+          {loadError}
+        </Alert>
+      </Box>
+    );
+  }
 
   if (submitted) {
     return (
@@ -318,6 +440,15 @@ const Questionarios: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" fontWeight={700} gutterBottom>Questionários</Typography>
+
+        {!questionnaire && !loading && (
+          <Alert severity="warning" sx={{ mb: 3 }} action={
+            <Button color="inherit" size="small" onClick={loadData}>Recarregar</Button>
+          }>
+            Nenhum questionário ativo encontrado. O sistema tentará criar um automaticamente — clique em <strong>Recarregar</strong> ou aguarde e tente novamente.
+          </Alert>
+        )}
+
         <Grid container spacing={3}>
           {questionnaire && (
             <Grid size={{ xs: 12, md: 6 }}>
@@ -445,7 +576,7 @@ const Questionarios: React.FC = () => {
                 <Typography fontWeight={600}>{domain.label}</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                {PROFESSOR_QUESTIONS.filter(q => q.domain === domain.key).map((q, idx) => (
+                {firestoreQuestions.filter(q => q.domain === domain.key).map((q, idx) => (
                   <Box key={q.id} mb={2}>
                     <Typography variant="body2" color="text.secondary">{idx + 1}. {q.text}</Typography>
                     {answers[q.id] && (
@@ -457,6 +588,11 @@ const Questionarios: React.FC = () => {
               </AccordionDetails>
             </Accordion>
           ))}
+          {submitError && (
+            <Alert severity="error" sx={{ mt: 2 }} onClose={() => setSubmitError('')}>
+              {submitError}
+            </Alert>
+          )}
           <Box display="flex" justifyContent="space-between" mt={4}>
             <Button variant="outlined" onClick={() => setActiveStep(4)} startIcon={<ArrowBack />}>Editar</Button>
             <Button
@@ -479,6 +615,7 @@ const Relatorios: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [myResponses, setMyResponses] = useState<QuestionnaireResponse[]>([]);
   const [myScores, setMyScores] = useState<DomainScore[]>([]);
   const [schoolScores, setSchoolScores] = useState<DomainScore[] | null>(null);
@@ -488,6 +625,7 @@ const Relatorios: React.FC = () => {
     if (!currentUser) return;
     (async () => {
       try {
+        setLoadError('');
         const [myR, schoolR] = await Promise.all([
           getUserResponses(currentUser.uid),
           currentUser.schoolId ? getSchoolResponses(currentUser.schoolId) : Promise.resolve([]),
@@ -500,6 +638,9 @@ const Relatorios: React.FC = () => {
         }
         const avgSchool = responsesToAvgScores(schoolR.filter(r => r.userId !== currentUser.uid));
         setSchoolScores(avgSchool);
+      } catch (e: any) {
+        console.error('Erro ao carregar relatórios:', e);
+        setLoadError(e?.message || 'Erro ao carregar relatórios. Tente novamente.');
       } finally {
         setLoading(false);
       }
@@ -507,6 +648,18 @@ const Relatorios: React.FC = () => {
   }, [currentUser]);
 
   if (loading) return <Box display="flex" justifyContent="center" mt={8}><CircularProgress /></Box>;
+
+  if (loadError) {
+    return (
+      <Box>
+        <Typography variant="h4" fontWeight={700} gutterBottom>Meus Relatórios</Typography>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {loadError}
+        </Alert>
+        <Button variant="outlined" onClick={() => window.location.reload()}>Tentar novamente</Button>
+      </Box>
+    );
+  }
 
   if (myResponses.length === 0) {
     return (
@@ -663,14 +816,15 @@ const Relatorios: React.FC = () => {
 // ── PERFIL ────────────────────────────────────────────────────────────────────
 
 const Perfil: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUser } = useAuth();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState({
     displayName: currentUser?.displayName || '',
-    segment: (currentUser as any)?.segment || [],
-    subjects: (currentUser as any)?.subjects?.join(', ') || '',
+    segment: (currentUser as any)?.segment || [] as string[],
+    subjects: (currentUser as any)?.subjects || [] as string[],
     classes: (currentUser as any)?.classes?.join(', ') || '',
     schoolId: currentUser?.schoolId || '',
   });
@@ -692,19 +846,26 @@ const Perfil: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentUser) return;
+    setSaveError('');
     try {
       setSaving(true);
       await updateUserProfile(currentUser.uid, {
         displayName: form.displayName,
         schoolId: form.schoolId || undefined,
-        ...(form.subjects ? { subjects: form.subjects.split(',').map((s: string) => s.trim()) } : {}),
+        subjects: form.subjects,
         ...(form.classes ? { classes: form.classes.split(',').map((s: string) => s.trim()) } : {}),
         segment: form.segment as any,
       } as any);
+      await refreshUser();
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (e) {
-      console.error(e);
+      setTimeout(() => setSaved(false), 4000);
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      if (msg.includes('permission-denied') || msg.includes('Missing or insufficient')) {
+        setSaveError('Permissão negada. Verifique as regras do Firestore ou se o seu usuário está autenticado.');
+      } else {
+        setSaveError(`Erro ao salvar: ${msg}`);
+      }
     } finally {
       setSaving(false);
     }
@@ -714,6 +875,7 @@ const Perfil: React.FC = () => {
     <Box>
       <Typography variant="h4" fontWeight={700} gutterBottom>Meu Perfil</Typography>
       {saved && <Alert severity="success" sx={{ mb: 3 }}>✅ Perfil atualizado no Firebase com sucesso!</Alert>}
+      {saveError && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setSaveError('')}>{saveError}</Alert>}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
@@ -762,8 +924,33 @@ const Perfil: React.FC = () => {
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <TextField fullWidth label="Áreas / Disciplinas" name="subjects" value={form.subjects} onChange={handleChange}
-                  helperText="Separe por vírgula (ex: Matemática, Ciências)" />
+                <FormControl fullWidth>
+                  <InputLabel>Áreas / Disciplinas</InputLabel>
+                  <Select
+                    multiple
+                    name="subjects"
+                    value={form.subjects}
+                    onChange={handleChange}
+                    input={<OutlinedInput label="Áreas / Disciplinas" />}
+                    renderValue={(selected: any) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {(selected as string[]).map(v => (
+                          <Chip
+                            key={v}
+                            label={SUBJECT_OPTIONS.find(o => o.value === v)?.label || v}
+                            size="small"
+                            color="secondary"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Box>
+                    )}
+                  >
+                    {SUBJECT_OPTIONS.map(o => (
+                      <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <TextField fullWidth label="Turmas" name="classes" value={form.classes} onChange={handleChange}
@@ -783,80 +970,6 @@ const Perfil: React.FC = () => {
   );
 };
 
-// ── AJUDA ─────────────────────────────────────────────────────────────────────
-
-const Ajuda: React.FC = () => {
-  const { currentUser } = useAuth();
-  const [materials, setMaterials] = useState<SupportMaterial[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-
-  useEffect(() => {
-    if (!currentUser) return;
-    (async () => {
-      try {
-        await seedDefaultSupportMaterials();
-        const mats = await getSupportMaterials(UserRole.PROFESSOR);
-        setMaterials(mats);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [currentUser]);
-
-  const filtered = filter === 'all' ? materials : materials.filter(m => m.type === filter);
-
-  const typeIcon = (type: string) => {
-    if (type === 'video') return <VideoLibrary color="error" />;
-    if (type === 'document') return <Article color="action" />;
-    return <Book color="primary" />;
-  };
-
-  return (
-    <Box>
-      <Typography variant="h4" fontWeight={700} gutterBottom>Materiais de Apoio</Typography>
-      <Stack direction="row" spacing={1} mb={3}>
-        {['all', 'video', 'guide', 'document'].map(f => (
-          <Chip key={f} label={f === 'all' ? 'Todos' : f === 'video' ? '📹 Vídeos' : f === 'guide' ? '📖 Guias' : '📄 Documentos'}
-            onClick={() => setFilter(f)} variant={filter === f ? 'filled' : 'outlined'} color={filter === f ? 'primary' : 'default'} />
-        ))}
-      </Stack>
-
-      {loading ? (
-        <LoadingSkeletonGrid count={3} height={180} xs={12} sm={6} md={4} />
-      ) : (
-        <Grid container spacing={3}>
-          {filtered.map(mat => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={mat.id}>
-              <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardContent sx={{ flex: 1 }}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    {typeIcon(mat.type)}
-                    <Chip label={mat.type} size="small" />
-                  </Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>{mat.title}</Typography>
-                  <Typography variant="body2" color="text.secondary">{mat.description}</Typography>
-                </CardContent>
-                <CardActions>
-                  <Button size="small" endIcon={<OpenInNew />} fullWidth variant="outlined"
-                    onClick={() => { if (mat.url && mat.url !== '#') window.open(mat.url, '_blank'); }}>
-                    {mat.type === 'video' ? 'Assistir' : 'Acessar'}
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-          {filtered.length === 0 && (
-            <Grid size={{ xs: 12 }}>
-              <Alert severity="info">Nenhum material encontrado para este filtro.</Alert>
-            </Grid>
-          )}
-        </Grid>
-      )}
-    </Box>
-  );
-};
-
 // ── LAYOUT PRINCIPAL ──────────────────────────────────────────────────────────
 
 const ProfessorDashboard: React.FC = () => {
@@ -868,7 +981,6 @@ const ProfessorDashboard: React.FC = () => {
     { text: 'Questionários', icon: <AssignmentIcon />, path: '/professor/questionarios' },
     { text: 'Relatórios', icon: <ChartIcon />, path: '/professor/relatorios' },
     { text: 'Perfil', icon: <PersonIcon />, path: '/professor/perfil' },
-    { text: 'Materiais de Apoio', icon: <HelpIcon />, path: '/professor/ajuda' },
   ];
 
   const incompleteChip = !currentUser?.schoolId ? (
@@ -900,7 +1012,6 @@ const ProfessorDashboard: React.FC = () => {
             <Route path="/questionarios" element={<Questionarios />} />
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/perfil" element={<Perfil />} />
-            <Route path="/ajuda" element={<Ajuda />} />
           </Routes>
         </Container>
       </DashboardLayout>

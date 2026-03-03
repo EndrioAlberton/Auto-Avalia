@@ -90,6 +90,59 @@ export const STUDENT_QUESTIONS: StudentQuestionDef[] = [
   { id: 'e10', text: 'Me sinto encorajado(a) a participar e expressar minhas opiniões nas aulas.', emoji: '💡' },
 ];
 
+// ── ÁREAS DE CONHECIMENTO E DISCIPLINAS PRÉ-DEFINIDAS ────────────────────────
+// Baseado na BNCC e na estrutura curricular das redes municipais e estaduais
+
+export interface SubjectOption {
+  value: string;
+  label: string;
+  area: string;
+}
+
+export const KNOWLEDGE_AREAS = [
+  { value: 'linguagens', label: 'Linguagens' },
+  { value: 'matematica', label: 'Matemática' },
+  { value: 'ciencias_natureza', label: 'Ciências da Natureza' },
+  { value: 'ciencias_humanas', label: 'Ciências Humanas' },
+  { value: 'ensino_religioso', label: 'Ensino Religioso' },
+  { value: 'formacao_tecnica', label: 'Formação Técnica e Profissional' },
+  { value: 'educacao_infantil', label: 'Educação Infantil (multidisciplinar)' },
+  { value: 'anos_iniciais', label: 'Anos Iniciais (multidisciplinar)' },
+];
+
+export const SUBJECT_OPTIONS: SubjectOption[] = [
+  // Linguagens
+  { value: 'lingua_portuguesa', label: 'Língua Portuguesa', area: 'linguagens' },
+  { value: 'lingua_inglesa',    label: 'Língua Inglesa',    area: 'linguagens' },
+  { value: 'lingua_espanhola',  label: 'Língua Espanhola',  area: 'linguagens' },
+  { value: 'arte',              label: 'Arte',              area: 'linguagens' },
+  { value: 'educacao_fisica',   label: 'Educação Física',   area: 'linguagens' },
+  { value: 'literatura',        label: 'Literatura',        area: 'linguagens' },
+  // Matemática
+  { value: 'matematica',        label: 'Matemática',        area: 'matematica' },
+  // Ciências da Natureza
+  { value: 'ciencias',          label: 'Ciências',          area: 'ciencias_natureza' },
+  { value: 'biologia',          label: 'Biologia',          area: 'ciencias_natureza' },
+  { value: 'quimica',           label: 'Química',           area: 'ciencias_natureza' },
+  { value: 'fisica',            label: 'Física',            area: 'ciencias_natureza' },
+  // Ciências Humanas
+  { value: 'historia',          label: 'História',          area: 'ciencias_humanas' },
+  { value: 'geografia',         label: 'Geografia',         area: 'ciencias_humanas' },
+  { value: 'filosofia',         label: 'Filosofia',         area: 'ciencias_humanas' },
+  { value: 'sociologia',        label: 'Sociologia',        area: 'ciencias_humanas' },
+  // Ensino Religioso
+  { value: 'ensino_religioso',  label: 'Ensino Religioso',  area: 'ensino_religioso' },
+  // Formação Técnica
+  { value: 'informatica',       label: 'Informática / Tecnologia', area: 'formacao_tecnica' },
+  { value: 'administracao',     label: 'Administração',     area: 'formacao_tecnica' },
+  { value: 'contabilidade',     label: 'Contabilidade',     area: 'formacao_tecnica' },
+  { value: 'enfermagem_tec',    label: 'Enfermagem (Técnico)', area: 'formacao_tecnica' },
+  { value: 'meio_ambiente',     label: 'Meio Ambiente',     area: 'formacao_tecnica' },
+  // Multidisciplinar / Infantil / Anos Iniciais
+  { value: 'multidisciplinar',  label: 'Multidisciplinar',  area: 'anos_iniciais' },
+  { value: 'pedagogia_infantil', label: 'Pedagogia / Ed. Infantil', area: 'educacao_infantil' },
+];
+
 export const DEFAULT_SUPPORT_MATERIALS = [
   { title: 'Como utilizar a plataforma SELF', description: 'Tutorial introdutório para professores', type: 'video' as const, url: '#', targetRole: ['professor'], tags: ['tutorial', 'início'] },
   { title: 'Guia de Práticas Pedagógicas Ativas', description: 'Estratégias para engajamento em sala de aula', type: 'guide' as const, url: '#', targetRole: ['professor'], tags: ['pedagogia', 'engajamento'] },

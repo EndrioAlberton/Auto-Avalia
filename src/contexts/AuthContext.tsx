@@ -12,6 +12,8 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<User>;
   register: (email: string, password: string, displayName: string, role: any, additionalData?: any) => Promise<User>;
   logout: () => Promise<void>;
+  /** Recarrega os dados do usuário do Firestore e atualiza o contexto */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -85,6 +87,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setFirebaseUser(null);
   };
 
+  /**
+   * Recarrega os dados do usuário do Firestore.
+   * Deve ser chamado após qualquer updateUserProfile para que
+   * currentUser reflita os dados atualizados (ex: schoolId).
+   */
+  const refreshUser = async (): Promise<void> => {
+    const fbUser = auth.currentUser;
+    if (!fbUser) return;
+    try {
+      const userData = await getUserData(fbUser.uid);
+      setCurrentUser(userData);
+    } catch (err) {
+      console.error('refreshUser erro:', err);
+    }
+  };
+
   const value: AuthContextType = {
     currentUser,
     firebaseUser,
@@ -92,7 +110,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     loginWithGoogle,
     register,
-    logout
+    logout,
+    refreshUser,
   };
 
   return (

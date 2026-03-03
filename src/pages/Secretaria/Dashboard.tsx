@@ -227,8 +227,8 @@ const GerenciarEscolas: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell><b>Nome</b></TableCell>
-              <TableCell><b>Regional</b></TableCell>
-              <TableCell><b>Distrito</b></TableCell>
+              <TableCell><b>Estado</b></TableCell>
+              <TableCell><b>Cidade</b></TableCell>
               <TableCell><b>Contato</b></TableCell>
               <TableCell><b>Ações</b></TableCell>
             </TableRow>
@@ -265,8 +265,8 @@ const GerenciarEscolas: React.FC = () => {
           <Stack spacing={2} mt={1}>
             <TextField fullWidth label="Nome da escola *" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             <Stack direction="row" spacing={2}>
-              <TextField fullWidth label="Regional" value={form.region} onChange={e => setForm(p => ({ ...p, region: e.target.value }))} />
-              <TextField fullWidth label="Distrito" value={form.district} onChange={e => setForm(p => ({ ...p, district: e.target.value }))} />
+              <TextField fullWidth label="Estado" value={form.region} onChange={e => setForm(p => ({ ...p, region: e.target.value }))} />
+              <TextField fullWidth label="Cidade" value={form.district} onChange={e => setForm(p => ({ ...p, district: e.target.value }))} />
             </Stack>
             <TextField fullWidth label="Endereço" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
             <TextField fullWidth label="Contato" value={form.contact} onChange={e => setForm(p => ({ ...p, contact: e.target.value }))} />
@@ -553,7 +553,7 @@ const VisaoRegional: React.FC = () => {
   // Agrupar escolas por regional
   const byRegion: Record<string, School[]> = {};
   for (const sc of schools) {
-    const region = sc.region || 'Sem Regional';
+    const region = sc.region || 'Sem Estado';
     if (!byRegion[region]) byRegion[region] = [];
     byRegion[region].push(sc);
   }
@@ -565,9 +565,9 @@ const VisaoRegional: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight={700} gutterBottom>Visão Regional</Typography>
+      <Typography variant="h4" fontWeight={700} gutterBottom>Visão por Estado</Typography>
       <Typography variant="body2" color="text.secondary" mb={3}>
-        Distribuição das escolas por regional/distrito
+        Distribuição das escolas por estado/cidade
       </Typography>
 
       {schools.length === 0 ? (
@@ -576,7 +576,7 @@ const VisaoRegional: React.FC = () => {
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Card elevation={2} sx={{ p: 2 }}>
-              <Typography variant="h6" fontWeight={600} mb={2}>Escolas por Regional</Typography>
+              <Typography variant="h6" fontWeight={600} mb={2}>Escolas por Estado</Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={regionData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
@@ -597,8 +597,8 @@ const VisaoRegional: React.FC = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell><b>Escola</b></TableCell>
-                      <TableCell><b>Regional</b></TableCell>
-                      <TableCell><b>Distrito</b></TableCell>
+                      <TableCell><b>Estado</b></TableCell>
+                      <TableCell><b>Cidade</b></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>

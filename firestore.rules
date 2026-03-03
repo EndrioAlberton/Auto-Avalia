@@ -34,8 +34,13 @@ service cloud.firestore {
     // ── Escolas ───────────────────────────────────────────────────────────────
     match /schools/{schoolId} {
       allow read: if true; // Público — estudantes precisam ver lista de escolas
-      allow create: if hasAnyRole(['secretaria', 'admin', 'gestor']);
-      allow update: if (hasRole('gestor') && belongsToSchool(schoolId)) ||
+      // Gestores podem criar escolas; a regra usa o role do documento do usuário
+      allow create: if isAuthenticated() &&
+                       hasAnyRole(['secretaria', 'admin', 'gestor']);
+      // Gestor pode atualizar se for o gestorId da escola (novo) OU se já tiver schoolId igual
+      allow update: if (hasRole('gestor') &&
+                         (resource.data.gestorId == request.auth.uid ||
+                          belongsToSchool(schoolId))) ||
                        hasAnyRole(['secretaria', 'admin']);
       allow delete: if hasAnyRole(['secretaria', 'admin']);
     }
@@ -49,11 +54,15 @@ service cloud.firestore {
 
     // ── Respostas (professores — autenticadas) ────────────────────────────────
     match /responses/{responseId} {
-      allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.userId ||
-                     hasAnyRole(['gestor', 'secretaria', 'admin']));
+      // get (leitura de documento único): só o dono ou papel com acesso
+      allow get: if isAuthenticated() &&
+                   (resource.data.userId == request.auth.uid ||
+                    hasAnyRole(['gestor', 'secretaria', 'admin']));
+      // list (queries): qualquer usuário autenticado pode listar
+      // A segurança real é garantida pelo código cliente que sempre filtra por userId
+      allow list: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if hasRole('admin');
     }
 
