@@ -1,4 +1,4 @@
-# Guia de Configuração e Deploy - SELF
+# Guia de Configuração e Deploy - Autoavalia
 
 ## 📋 Pré-requisitos
 

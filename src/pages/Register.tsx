@@ -70,7 +70,7 @@ const Register: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Cadastro - SELF</title>
+        <title>Cadastro - Autoavalia</title>
       </Helmet>
       
       <Box

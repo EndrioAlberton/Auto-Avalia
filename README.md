@@ -1,4 +1,4 @@
-# SELF - Sistema Educacional de Learning e Formação
+# Autoavalia - Sistema Educacional de Learning e Formação
 
 Plataforma web para autoavaliação e diagnóstico pedagógico, baseada nos princípios de "Self-reflection on Effective Learning by Fostering Innovation through Educational technologies".
 

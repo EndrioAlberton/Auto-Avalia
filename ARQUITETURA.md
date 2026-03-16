@@ -1,8 +1,8 @@
-# Arquitetura do Projeto SELF
+# Arquitetura do Projeto Autoavalia
 
 ## 📐 Visão Geral da Arquitetura
 
-O projeto SELF utiliza uma arquitetura moderna baseada em:
+O projeto Autoavalia utiliza uma arquitetura moderna baseada em:
 - **Frontend**: React 18 + TypeScript
 - **Backend**: Firebase (BaaS - Backend as a Service)
 - **Autenticação**: Firebase Authentication

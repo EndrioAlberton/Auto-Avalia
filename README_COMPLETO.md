@@ -1,8 +1,8 @@
-# SELF - Sistema Educacional de Learning e Formação
+# Autoavalia - Sistema Educacional de Learning e Formação
 
 ## 🎓 Sobre o Projeto
 
-O **SELF** é uma plataforma web completa para autoavaliação e diagnóstico pedagógico, desenvolvida com base nos princípios de "Self-reflection on Effective Learning by Fostering Innovation through Educational technologies".
+O **Autoavalia** é uma plataforma web completa para autoavaliação e diagnóstico pedagógico, desenvolvida com base nos princípios de "Self-reflection on Effective Learning by Fostering Innovation through Educational technologies".
 
 A plataforma permite que professores avaliem suas práticas pedagógicas, gestores acompanhem o progresso de suas escolas, estudantes forneçam feedback anônimo, e secretarias de educação gerenciem redes inteiras de ensino.
 

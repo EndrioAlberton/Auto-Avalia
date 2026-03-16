@@ -716,9 +716,9 @@ const SecretariaDashboard: React.FC = () => {
 
   return (
     <>
-      <Helmet><title>Secretaria – SELF</title></Helmet>
+      <Helmet><title>Secretaria – Autoavalia</title></Helmet>
       <DashboardLayout
-        title="SELF — Secretaria da Educação"
+        title="Autoavalia — Secretaria da Educação"
         menuItems={menuItems}
         gradientFrom="#dc2626"
         gradientTo="#d97706"

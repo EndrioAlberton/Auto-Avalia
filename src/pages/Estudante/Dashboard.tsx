@@ -36,7 +36,7 @@ const EstudanteLanding: React.FC<{ onStart: (schoolId: string) => void }> = ({ o
     <Box minHeight="100vh" sx={{ background: 'linear-gradient(135deg,#7c3aed 0%,#2563eb 100%)' }}>
       <Container maxWidth="sm" sx={{ py: 8 }}>
         <Box textAlign="center" mb={4}>
-          <Typography variant="h3" fontWeight={900} color="white" gutterBottom>SELF</Typography>
+          <Typography variant="h3" fontWeight={900} color="white" gutterBottom>Autoavalia</Typography>
           <Typography variant="h6" color="rgba(255,255,255,0.85)">
             Sua voz importa! 🎓
           </Typography>
@@ -95,7 +95,7 @@ const EstudanteLanding: React.FC<{ onStart: (schoolId: string) => void }> = ({ o
         </Card>
 
         <Typography variant="caption" color="rgba(255,255,255,0.6)" display="block" textAlign="center" mt={2}>
-          Plataforma SELF · Secretaria de Educação
+          Plataforma Autoavalia · Secretaria de Educação
         </Typography>
       </Container>
     </Box>
@@ -289,7 +289,7 @@ const EstudanteDashboard: React.FC = () => {
 
   return (
     <>
-      <Helmet><title>Estudante – SELF</title></Helmet>
+      <Helmet><title>Estudante – Autoavalia</title></Helmet>
       {phase === 'landing' && (
         <EstudanteLanding onStart={handleStart} />
       )}

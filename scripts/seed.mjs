@@ -1,6 +1,6 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
- * ║  SELF — Script de Seed do Firebase                              ║
+ * ║  Autoavalia — Script de Seed do Firebase                              ║
  * ║                                                                  ║
  * ║  Popula o banco Firestore com os dados iniciais:                ║
  * ║    • 4 usuários genéricos (professor, gestor, secretaria,       ║
@@ -128,7 +128,7 @@ const STUDENT_QUESTIONS = [
 ];
 
 const SUPPORT_MATERIALS = [
-  { title: 'Como utilizar a plataforma SELF',          description: 'Tutorial introdutório para professores',                        type: 'video',    url: '#', targetRole: ['professor'], tags: ['tutorial', 'início']         },
+  { title: 'Como utilizar a plataforma Autoavalia',          description: 'Tutorial introdutório para professores',                        type: 'video',    url: '#', targetRole: ['professor'], tags: ['tutorial', 'início']         },
   { title: 'Guia de Práticas Pedagógicas Ativas',      description: 'Estratégias para engajamento em sala de aula',                 type: 'guide',    url: '#', targetRole: ['professor'], tags: ['pedagogia', 'engajamento']   },
   { title: 'Tecnologia em sala: práticas iniciais',    description: 'Como incorporar ferramentas digitais no ensino',               type: 'video',    url: '#', targetRole: ['professor'], tags: ['tecnologia']                  },
   { title: 'Instrumentos de Avaliação Formativa',      description: 'Portfólios, rubricas e autoavaliação na prática',              type: 'document', url: '#', targetRole: ['professor'], tags: ['avaliação']                  },
@@ -250,7 +250,7 @@ async function seedSupportMaterials(db) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function main() {
-  console.log('🔥 SELF — Seed do Firebase');
+  console.log('🔥 Autoavalia — Seed do Firebase');
   console.log('══════════════════════════════════════════');
   console.log('Projeto : ferramenteapoioensino');
   console.log('Senha   : Self@2025 (todos os usuários genéricos)\n');

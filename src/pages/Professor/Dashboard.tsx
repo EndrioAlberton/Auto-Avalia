@@ -636,7 +636,8 @@ const Relatorios: React.FC = () => {
           for (const a of myR[0].answers) map[a.questionId] = Number(a.value);
           setMyScores(answersToScores(map));
         }
-        const avgSchool = responsesToAvgScores(schoolR.filter(r => r.userId !== currentUser.uid));
+        const filtered = schoolR.filter(r => r.userId !== currentUser.uid);
+        const avgSchool = filtered.length >= 1 ? responsesToAvgScores(filtered) : null;
         setSchoolScores(avgSchool);
       } catch (e: any) {
         console.error('Erro ao carregar relatórios:', e);
@@ -736,7 +737,7 @@ const Relatorios: React.FC = () => {
               <Legend />
             </RadarChart>
           </ResponsiveContainer>
-          {!schoolScores && <Alert severity="info" sx={{ mt: 1 }}>Comparação com a escola disponível quando outros professores responderem.</Alert>}
+          {!schoolScores && <Alert severity="info" sx={{ mt: 1 }}>Comparação com a escola disponível quando pelo menos 1 outro professor responder.</Alert>}
         </Card>
       )}
 
@@ -997,9 +998,9 @@ const ProfessorDashboard: React.FC = () => {
 
   return (
     <>
-      <Helmet><title>Professor – SELF</title></Helmet>
+      <Helmet><title>Professor – Autoavalia</title></Helmet>
       <DashboardLayout
-        title="SELF — Professor"
+        title="Autoavalia — Professor"
         menuItems={menuItems}
         gradientFrom="#7c3aed"
         gradientTo="#2563eb"

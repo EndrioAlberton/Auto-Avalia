@@ -55,7 +55,7 @@ const Login: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Login - SELF</title>
+        <title>Login - Autoavalia</title>
       </Helmet>
       
       <Box
@@ -71,7 +71,7 @@ const Login: React.FC = () => {
           <Paper elevation={3} sx={{ p: 4 }}>
             <Box textAlign="center" mb={3}>
               <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-                SELF
+                Autoavalia
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Sistema Educacional de Learning e Formação

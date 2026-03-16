@@ -1,4 +1,4 @@
-# 🚀 Início Rápido - SELF
+# 🚀 Início Rápido - Autoavalia
 
 ## ⚡ Comandos Essenciais
 

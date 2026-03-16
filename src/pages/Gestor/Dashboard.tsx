@@ -698,9 +698,9 @@ const GestorDashboard: React.FC = () => {
 
   return (
     <>
-      <Helmet><title>Gestor Escolar – SELF</title></Helmet>
+      <Helmet><title>Gestor Escolar – Autoavalia</title></Helmet>
       <DashboardLayout
-        title="SELF — Gestor Escolar"
+        title="Autoavalia — Gestor Escolar"
         menuItems={menuItems}
         gradientFrom="#059669"
         gradientTo="#2563eb"
