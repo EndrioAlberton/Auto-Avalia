@@ -71,7 +71,8 @@ const SecretariaHome: React.FC = () => {
   const pieData = [
     { name: 'Professores', value: professors.length },
     { name: 'Gestores', value: users.filter(u => u.role === UserRole.GESTOR).length },
-    { name: 'Outros', value: users.filter(u => u.role !== UserRole.PROFESSOR && u.role !== UserRole.GESTOR).length },
+    { name: 'Secretarias', value: users.filter(u => u.role === UserRole.SECRETARIA).length },
+    { name: 'Estudantes', value: users.filter(u => u.role === UserRole.ESTUDANTE).length },
   ].filter(d => d.value > 0);
 
   return (
@@ -626,10 +627,21 @@ const AdministracaoSistema: React.FC = () => {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [tab, setTab] = useState(0);
 
   useEffect(() => {
-    getAllUsers(currentUser?.networkId).then(setUsers).finally(() => setLoading(false));
+    const load = async () => {
+      setLoading(true);
+      const [u, s] = await Promise.all([
+        getAllUsers(currentUser?.networkId),
+        getAllSchools(currentUser?.networkId),
+      ]);
+      setUsers(u);
+      setSchools(s);
+      setLoading(false);
+    };
+    load();
   }, [currentUser]);
 
   const byRole: Record<string, User[]> = {
@@ -687,7 +699,7 @@ const AdministracaoSistema: React.FC = () => {
                   </Box>
                 </TableCell>
                 <TableCell>{u.email}</TableCell>
-                <TableCell>{u.schoolId || '—'}</TableCell>
+                <TableCell>{schools.find(sc => sc.id === u.schoolId)?.name || u.schoolId || '—'}</TableCell>
                 <TableCell>{formatFirestoreDate((u as any).createdAt)}</TableCell>
               </TableRow>
             ))}

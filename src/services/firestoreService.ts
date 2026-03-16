@@ -104,11 +104,24 @@ export const getTeachersBySchool = async (schoolId: string): Promise<User[]> =>
 /** Retorna todos os usuários da rede (para secretaria) */
 export const getAllUsers = async (networkId?: string): Promise<User[]> => {
   const ref = collection(db, 'users');
-  const q = networkId
-    ? query(ref, where('networkId', '==', networkId))
-    : query(ref, orderBy('displayName'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => d.data() as User);
+  if (networkId) {
+    const snap = await getDocs(query(ref, where('networkId', '==', networkId)));
+    const users = snap.docs.map(d => d.data() as User);
+    if (users.length === 0) {
+      const allSnap = await getDocs(query(ref, orderBy('displayName')));
+      return allSnap.docs.map(d => d.data() as User);
+    }
+    // Se não houver professores/gestores com networkId mas houver secretarias,
+    // voltar para lista completa para garantir visibilidade de todos os perfis.
+    const hasStaff = users.some(u => u.role === UserRole.PROFESSOR || u.role === UserRole.GESTOR);
+    if (!hasStaff) {
+      const allSnap = await getDocs(query(ref, orderBy('displayName')));
+      return allSnap.docs.map(d => d.data() as User);
+    }
+    return users;
+  }
+  const allSnap = await getDocs(query(ref, orderBy('displayName')));
+  return allSnap.docs.map(d => d.data() as User);
 };
 
 /** Retorna usuários por role (para secretaria) */

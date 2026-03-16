@@ -31,6 +31,7 @@ import {
   query,
   where,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
 
 // ── Configuração ──────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ const GENERIC_USERS = [
     password:    'Self@2025',
     displayName: 'Prof. Ana Souza',
     role:        'professor',
+    networkId:   'rede-padrao',
     segment:     ['anos_finais', 'ensino_medio'],
     subjects:    ['matematica', 'fisica'],
     classes:     ['8º A', '9º B', '1º EM'],
@@ -63,6 +65,7 @@ const GENERIC_USERS = [
     password:    'Self@2025',
     displayName: 'Diretor Carlos Lima',
     role:        'gestor',
+    networkId:   'rede-padrao',
     profileCompleted: true,
   },
   {
@@ -78,6 +81,7 @@ const GENERIC_USERS = [
     password:    'Self@2025',
     displayName: 'Estudante Demo',
     role:        'estudante',
+    networkId:   'rede-padrao',
     profileCompleted: true,
   },
 ];
@@ -168,19 +172,24 @@ async function seedUsers(auth, db) {
       const userRef = doc(db, 'users', uid);
       const userSnap = await getDoc(userRef);
 
-      if (userSnap.exists()) {
-        console.log('já existe — pulando.');
-        continue;
-      }
-
-      // Cria o documento no Firestore
       const { password: _p, ...userData } = user;
-      await setDoc(userRef, {
-        ...userData,
-        uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      if (userSnap.exists()) {
+        // Atualiza dados existentes para incluir networkId e profileCompleted caso falte
+        await updateDoc(userRef, {
+          ...userData,
+          updatedAt: serverTimestamp(),
+        });
+        console.log('já existe — atualizado.');
+      } else {
+        // Cria o documento no Firestore
+        await setDoc(userRef, {
+          ...userData,
+          uid,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        console.log('✅ criado!');
+      }
 
       console.log('✅ criado!');
     } catch (err) {
