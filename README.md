@@ -1,105 +1,77 @@
-# Autoavalia - Sistema Educacional de Learning e Formação
+# Autoavalia
 
-Plataforma web para autoavaliação e diagnóstico pedagógico, baseada nos princípios de "Self-reflection on Effective Learning by Fostering Innovation through Educational technologies".
+Plataforma web de autoavaliação e diagnóstico pedagógico. Professores respondem questionários sobre suas práticas, gestores acompanham a equipe, estudantes fornecem feedback anônimo e a secretaria gerencia a rede de escolas.
 
-## 🎯 Objetivo
+## Stack
 
-Fornecer uma ferramenta completa para:
-- Professores realizarem autoavaliação de suas práticas pedagógicas
-- Gestores escolares acompanharem e gerenciarem o processo
-- Estudantes fornecerem feedback anônimo
-- Secretarias/Redes de ensino gerenciarem múltiplas escolas
+| Camada | Tecnologia |
+|---|---|
+| Frontend | React 18 + TypeScript + Vite |
+| UI | Material-UI v6 |
+| Backend | Firebase (Auth + Firestore) |
+| Gráficos | Recharts |
+| Exportação | jsPDF |
 
-## 🚀 Tecnologias
+## Perfis de acesso
 
-- **Frontend**: React 18 + TypeScript
-- **UI**: Material-UI (MUI)
-- **Backend**: Firebase (Authentication, Firestore, Storage)
-- **Gráficos**: Recharts
-- **Exportação**: jsPDF
-- **Bundler**: Vite
+| Perfil | O que pode fazer |
+|---|---|
+| **Professor** | Responder questionário, ver relatório individual e evolução |
+| **Gestor** | Gerenciar escola, convidar professores, ver relatórios da equipe |
+| **Estudante** | Responder questionário anônimo (sem login) |
+| **Secretaria** | Gerenciar escolas e usuários da rede |
+| **Admin** | Acesso total |
 
-## 📦 Instalação
+## Estrutura
+
+```
+src/
+├── app/            # Rotas e configuração global
+├── components/     # Componentes visuais reutilizáveis (layout, data-display, feedback)
+├── contexts/       # AuthContext
+├── data/           # Dados estáticos (questionários)
+├── features/       # Lógica por domínio (auth, professor, gestor, secretaria, questionnaire, analytics)
+├── services/       # Firestore e Firebase Auth
+├── types/          # Tipos TypeScript globais
+└── utils/          # Funções utilitárias
+```
+
+## Instalação
 
 ```bash
 npm install
 ```
 
-## 🔧 Configuração
+Configure o Firebase em `src/firebaseConfig.ts` com as credenciais do seu projeto (Auth e Firestore habilitados).
 
-1. Crie um projeto no Firebase Console
-2. Ative Authentication (Email/Password e Google)
-3. Ative Firestore Database
-4. Copie as credenciais e cole em `src/firebaseConfig.ts`
-
-## 🏃 Execução
+## Comandos
 
 ```bash
-# Desenvolvimento
-npm run dev
-
-# Build de produção
-npm run build
-
-# Preview da build
-npm run preview
+npm run dev       # servidor de desenvolvimento
+npm run build     # build de produção
+npm run seed      # popula o Firestore com dados de exemplo
 ```
 
-## 📁 Estrutura do Projeto
+## Seed
 
+O seed cria 8 usuários (admin, secretaria, gestor, 5 professores) com respostas já preenchidas, uma escola e 20 respostas anônimas de estudantes. Senha de todos: `Self@2025`.
+
+| Usuário | Email |
+|---|---|
+| Admin | admin@autoavalia.com |
+| Secretaria | secretaria@autoavalia.com |
+| Gestor | gestor@joaopaulo.edu.br |
+| Professor (Ana) | ana.silva@joaopaulo.edu.br |
+| Professor (Carlos) | carlos.santos@joaopaulo.edu.br |
+| Professor (Maria) | maria.oliveira@joaopaulo.edu.br |
+| Professor (Pedro) | pedro.costa@joaopaulo.edu.br |
+| Professor (Lucia) | lucia.ferreira@joaopaulo.edu.br |
+
+## Regras Firestore
+
+As regras de segurança estão em `firestore.rules`. Para publicar:
+
+```bash
+firebase deploy --only firestore:rules
+firebase deploy --only firestore:indexes
 ```
-src/
-├── components/        # Componentes reutilizáveis
-├── pages/            # Páginas da aplicação
-├── contexts/         # Contextos React (Auth, User, etc)
-├── services/         # Serviços Firebase
-├── types/            # Definições TypeScript
-├── utils/            # Funções utilitárias
-├── hooks/            # Custom Hooks
-└── theme.ts          # Tema Material-UI
-```
-
-## 👥 Perfis de Usuário
-
-### Professor
-- Responder questionários
-- Visualizar relatórios individuais
-- Acompanhar evolução
-- Comparar com médias
-
-### Gestor Escolar
-- Gerenciar escola
-- Convidar usuários
-- Visualizar relatórios agregados
-- Exportar dados
-
-### Estudante
-- Responder questionários anônimos
-- Interface simplificada
-
-### Secretaria/Rede
-- Gerenciar múltiplas escolas
-- Relatórios por região
-- Administração geral
-
-## 📊 Funcionalidades Principais
-
-- ✅ Autenticação segura
-- ✅ Questionários customizáveis
-- ✅ Relatórios dinâmicos e gráficos
-- ✅ Comparações e benchmarks
-- ✅ Exportação de dados (PDF/CSV)
-- ✅ Dashboard analítico
-- ✅ Gestão de permissões
-- ✅ Respostas anônimas para estudantes
-
-## 🔒 Segurança
-
-- Autenticação Firebase
-- Regras Firestore para controle de acesso
-- Dados anonimizados conforme perfil
-- Backup automático
-
-## 📄 Licença
-
-Propriedade de MAXIQUIM - Todos os direitos reservados

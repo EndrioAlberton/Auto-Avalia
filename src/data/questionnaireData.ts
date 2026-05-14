@@ -144,7 +144,7 @@ export const SUBJECT_OPTIONS: SubjectOption[] = [
 ];
 
 export const DEFAULT_SUPPORT_MATERIALS = [
-  { title: 'Como utilizar a plataforma SELF', description: 'Tutorial introdutório para professores', type: 'video' as const, url: '#', targetRole: ['professor'], tags: ['tutorial', 'início'] },
+  { title: 'Como utilizar a plataforma Auto Avalia', description: 'Tutorial introdutório para professores', type: 'video' as const, url: '#', targetRole: ['professor'], tags: ['tutorial', 'início'] },
   { title: 'Guia de Práticas Pedagógicas Ativas', description: 'Estratégias para engajamento em sala de aula', type: 'guide' as const, url: '#', targetRole: ['professor'], tags: ['pedagogia', 'engajamento'] },
   { title: 'Tecnologia em sala: práticas iniciais', description: 'Como incorporar ferramentas digitais no ensino', type: 'video' as const, url: '#', targetRole: ['professor'], tags: ['tecnologia'] },
   { title: 'Instrumentos de Avaliação Formativa', description: 'Portfólios, rubricas e autoavaliação na prática', type: 'document' as const, url: '#', targetRole: ['professor'], tags: ['avaliação'] },

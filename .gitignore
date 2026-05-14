@@ -70,3 +70,11 @@ coverage
 # Misc
 .DS_Store
 Thumbs.db
+
+# Documentos internos (não subir)
+DESIGN.md
+ROADMAP.md
+linear.app/
+todas_perguntas.md
+PRIMEIRA_ETAPA_PROJETO_FINAL.md
+PROJETO_FINAL_SIMPLES.md

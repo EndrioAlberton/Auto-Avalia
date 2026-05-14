@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk tsc *)",
+      "Bash(node -e \"require\\('recharts'\\); console.log\\('ok'\\)\")",
+      "Bash(rtk grep *)",
+      "Bash(rtk npx *)",
+      "Bash(rtk npm *)",
+      "Bash(rtk git *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts, null, 2\\)\\)\")",
+      "Bash(Get-ChildItem -Recurse -Path .\\\\src -Include *.tsx, *.ts, *.css, *.json -File)",
+      "Bash(Sort-Object FullName)",
+      "Bash(rtk ls *)",
+      "Bash(bash /tmp/check_imports.sh)",
+      "Bash(cat)",
+      "Bash(bash /tmp/find_unused.sh)",
+      "Bash(bash /tmp/find_truly_unused.sh)",
+      "Bash(grep -E \"\\\\.md$\")",
+      "Bash(rtk find *)"
+    ]
+  }
+}

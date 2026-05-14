@@ -6,7 +6,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
-import { theme } from './theme';
+import { ToastProvider } from './components/feedback/ToastProvider';
+import { theme } from './components/theme';
 import './reset.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -15,9 +16,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <AuthProvider>
-            <App />
-          </AuthProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </ToastProvider>
         </ThemeProvider>
       </BrowserRouter>
     </HelmetProvider>

@@ -23,7 +23,11 @@ service cloud.firestore {
 
     // ── Usuários ──────────────────────────────────────────────────────────────
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        hasAnyRole(['secretaria', 'admin']) ||
+        (hasRole('gestor') && belongsToSchool(resource.data.schoolId))
+      );
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isAuthenticated() &&
                       (request.auth.uid == userId ||

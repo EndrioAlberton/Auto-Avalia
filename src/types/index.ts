@@ -75,9 +75,12 @@ export interface School {
   networkId?: string;
   region?: string;
   district?: string;
+  state?: string;
+  city?: string;
   segments: EducationSegment[];
   gestorId?: string;
   address?: string;
+  phone?: string;
   contact?: string;
   createdAt: Date;
   updatedAt: Date;

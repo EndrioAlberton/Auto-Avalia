@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, AppBar, Toolbar, Typography, IconButton, Drawer,
   List, ListItem, ListItemIcon, ListItemText, ListItemButton,
-  Avatar, Menu, MenuItem,
+  Avatar, Menu, MenuItem, useTheme, useMediaQuery,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -39,7 +39,6 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const DRAWER_WIDTH = 240;
 
 /**
  * Layout compartilhado para os dashboards de Professor, Gestor e Secretaria.
@@ -55,11 +54,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   profilePath,
   children,
 }) => {
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isSm = useMediaQuery(theme.breakpoints.down('md'));
+
+  const drawerWidth = 240;
+  const showDrawer = isSm ? drawerOpen : true;
 
   const handleLogout = async () => {
     try {
@@ -149,12 +153,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       {/* ── Drawer ─────────────────────────────────────────────────────────── */}
       <Drawer
-        variant="persistent"
-        open={drawerOpen}
+        variant={isSm ? 'temporary' : 'persistent'}
+        open={showDrawer}
+        onClose={() => setDrawerOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
-          width: DRAWER_WIDTH,
+          width: drawerWidth,
           flexShrink: 0,
-          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
+          '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' },
+          display: { xs: showDrawer ? 'block' : 'none', md: 'block' },
         }}
       >
         <Toolbar />
@@ -191,11 +198,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           flexGrow: 1,
           p: 3,
           mt: 8,
-          ml: drawerOpen ? `${DRAWER_WIDTH}px` : 0,
-          transition: 'margin 0.3s',
+          ml: !isSm ? `${drawerWidth}px` : 0,
+          transition: 'all 0.3s',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
         }}
       >
-        {children}
+        <Box sx={{ width: '100%', maxWidth: 1200, mx: 'auto', px: isSm ? 1 : 2 }}>
+          {children}
+        </Box>
       </Box>
     </Box>
   );
