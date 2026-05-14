@@ -7,11 +7,11 @@ import {
   Legend,
   Tooltip,
 } from 'recharts';
-import { ContentCard } from '../../../components/data-display/ContentCard';
-import { EmptyState } from '../../../components/data-display/EmptyState';
-import { Skeleton } from '../../../components/feedback/Skeleton';
+import { ContentCard } from '../../../components/ui/data-display/ContentCard';
+import { EmptyState } from '../../../components/ui/data-display/EmptyState';
+import { Skeleton } from '../../../components/ui/feedback/Skeleton';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import { colors } from '../../../components/tokens';
+import { colors } from '../../../components/ui/tokens';
 
 export interface DomainScore {
   domain: string;

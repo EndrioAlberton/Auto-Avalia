@@ -8,10 +8,10 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { EmptyState } from '../../../components/data-display/EmptyState';
-import { Skeleton } from '../../../components/feedback/Skeleton';
+import { EmptyState } from '../../../components/ui/data-display/EmptyState';
+import { Skeleton } from '../../../components/ui/feedback/Skeleton';
 import TimelineIcon from '@mui/icons-material/Timeline';
-import { colors, domainColors } from '../../../components/tokens';
+import { colors, domainColors } from '../../../components/ui/tokens';
 
 export interface EvolutionPoint {
   period: string;

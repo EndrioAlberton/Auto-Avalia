@@ -4,10 +4,10 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import { ProgressBar } from '../../../components/data-display/ProgressBar';
+import { ProgressBar } from '../../../components/ui/data-display/ProgressBar';
 import { saveStudentResponse } from '../../../services/firestoreService';
 import { STUDENT_QUESTIONS } from '../../../data/questionnaireData';
-import { colors, radius } from '../../../components/tokens';
+import { colors, radius } from '../../../components/ui/tokens';
 
 const EMOJI_SCALE = ['', '😢', '😕', '😐', '😊', '🤩'];
 const SCALE_LABELS = ['', 'Nunca', 'Raramente', 'Às vezes', 'Frequentemente', 'Sempre'];

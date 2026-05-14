@@ -10,7 +10,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import { getAllSchools } from '../../../services/firestoreService';
 import { School } from '../../../types';
-import { colors, radius } from '../../../components/tokens';
+import { colors, radius } from '../../../components/ui/tokens';
 
 export function SchoolSelectPage() {
   const navigate = useNavigate();

@@ -8,8 +8,8 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { Skeleton } from '../../../components/feedback/Skeleton';
-import { colors, domainColors } from '../../../components/tokens';
+import { Skeleton } from '../../../components/ui/feedback/Skeleton';
+import { colors, domainColors } from '../../../components/ui/tokens';
 
 export interface DomainBarData {
   domain: string;

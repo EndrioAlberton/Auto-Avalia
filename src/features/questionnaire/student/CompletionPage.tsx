@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { colors, radius } from '../../../components/tokens';
+import { colors, radius } from '../../../components/ui/tokens';
 
 export function CompletionPage() {
   const navigate = useNavigate();
