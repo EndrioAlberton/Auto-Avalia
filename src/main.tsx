@@ -6,8 +6,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
-import { ToastProvider } from './components/feedback/ToastProvider';
-import { theme } from './components/theme';
+import { ToastProvider } from './components/ui/feedback/ToastProvider';
+import { theme } from './components/ui/theme';
 import './reset.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

@@ -5,9 +5,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './app/ProtectedRoute';
 import { RoleRouter } from './app/RoleRouter';
-import { AppShell } from './components/layout/AppShell';
-import { professorNavConfig, gestorNavConfig, secretariaNavConfig } from './components/layout/navConfigs';
-import { colors } from './components/tokens';
+import { AppShell } from './components/ui/layout/AppShell';
+import { professorNavConfig, gestorNavConfig, secretariaNavConfig } from './components/ui/layout/navConfigs';
+import { colors } from './components/ui/tokens';
 
 // Public pages (Phase 9)
 const LoginPage    = lazy(() => import('./features/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
