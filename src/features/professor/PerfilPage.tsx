@@ -12,13 +12,13 @@ import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { ContentCard } from '../../components/data-display/ContentCard';
-import { useToast } from '../../components/feedback/ToastProvider';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
+import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAllSchools, updateUserProfile } from '../../services/firestoreService';
 import { SUBJECT_OPTIONS } from '../../data/questionnaireData';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 import { initials } from '../../utils/userUtils';
 
 const SEGMENT_OPTIONS = [

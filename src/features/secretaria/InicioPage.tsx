@@ -4,13 +4,13 @@ import Grid from '@mui/material/Grid2';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { StatCard } from '../../components/data-display/StatCard';
-import { ContentCard } from '../../components/data-display/ContentCard';
-import { ProgressBar } from '../../components/data-display/ProgressBar';
-import { Badge } from '../../components/primitives/Badge';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { StatCard } from '../../components/ui/data-display/StatCard';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
+import { ProgressBar } from '../../components/ui/data-display/ProgressBar';
+import { Badge } from '../../components/ui/primitives/Badge';
 import { useSecretariaData } from './hooks/useSecretariaData';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 
 export function InicioPage() {
   const navigate = useNavigate();

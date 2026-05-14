@@ -13,19 +13,19 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { ContentCard } from '../../components/data-display/ContentCard';
-import { StatCard } from '../../components/data-display/StatCard';
-import { DataTable, Column } from '../../components/data-display/DataTable';
-import { Badge } from '../../components/primitives/Badge';
-import { EmptyState } from '../../components/data-display/EmptyState';
-import { useToast } from '../../components/feedback/ToastProvider';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
+import { StatCard } from '../../components/ui/data-display/StatCard';
+import { DataTable, Column } from '../../components/ui/data-display/DataTable';
+import { Badge } from '../../components/ui/primitives/Badge';
+import { EmptyState } from '../../components/ui/data-display/EmptyState';
+import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { createInvitation } from '../../services/firestoreService';
 import { formatFirestoreDate } from '../../services/analyticsService';
 import { useGestorData } from './hooks/useGestorData';
 import { User } from '../../types';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 
 interface TeacherRow extends User {
   statusLabel: 'Respondido' | 'Pendente' | 'Convidado';

@@ -4,13 +4,13 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import CircularProgress from '@mui/material/CircularProgress';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { ContentCard } from '../../components/data-display/ContentCard';
-import { EmptyState } from '../../components/data-display/EmptyState';
-import { DataTable } from '../../components/data-display/DataTable';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
+import { EmptyState } from '../../components/ui/data-display/EmptyState';
+import { DataTable } from '../../components/ui/data-display/DataTable';
 import { useSecretariaData } from './hooks/useSecretariaData';
 import { DOMAINS } from '../../data/questionnaireData';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);

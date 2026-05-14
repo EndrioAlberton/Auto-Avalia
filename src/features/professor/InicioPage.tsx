@@ -2,16 +2,16 @@ import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import CircularProgress from '@mui/material/CircularProgress';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { StatCard } from '../../components/data-display/StatCard';
-import { ContentCard } from '../../components/data-display/ContentCard';
-import { ActionCard } from '../../components/data-display/ActionCard';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { StatCard } from '../../components/ui/data-display/StatCard';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
+import { ActionCard } from '../../components/ui/data-display/ActionCard';
 import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { useProfessorData } from './hooks/useProfessorData';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../components/feedback/ToastProvider';
+import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { acceptInvitation, updateUserProfile } from '../../services/firestoreService';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 
 export function InicioPage() {
   const navigate = useNavigate();

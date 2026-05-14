@@ -12,9 +12,9 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { NavConfig } from './nav.types';
 import { Sidebar } from './Sidebar';
 import { colors, motion } from '../tokens';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { initials } from '../../utils/userUtils';
+import { initials } from '../../../utils/userUtils';
 
 const SIDEBAR_EXPANDED = 240;
 const SIDEBAR_COLLAPSED = 64;

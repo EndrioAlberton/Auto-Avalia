@@ -15,7 +15,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types';
-import { colors, radius } from '../../components/tokens';
+import { colors, radius } from '../../components/ui/tokens';
 import { roleHomePaths } from '../../app/routes';
 
 export function RegisterPage() {

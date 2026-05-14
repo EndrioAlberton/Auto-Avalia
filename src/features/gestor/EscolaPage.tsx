@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { ContentCard } from '../../components/data-display/ContentCard';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { SchoolForm, SchoolFormValues } from '../school/SchoolForm';
-import { useToast } from '../../components/feedback/ToastProvider';
+import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { createSchool, getSchool, updateSchool } from '../../services/firestoreService';
 import { updateUserProfile } from '../../services/firestoreService';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 
 const EMPTY: SchoolFormValues = { name: '', state: '', city: '', address: '', phone: '', email: '' };
 

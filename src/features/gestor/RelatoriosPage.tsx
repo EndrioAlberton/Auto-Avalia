@@ -4,16 +4,16 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import CircularProgress from '@mui/material/CircularProgress';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { ContentCard } from '../../components/data-display/ContentCard';
-import { EmptyState } from '../../components/data-display/EmptyState';
-import { DataTable } from '../../components/data-display/DataTable';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
+import { EmptyState } from '../../components/ui/data-display/EmptyState';
+import { DataTable } from '../../components/ui/data-display/DataTable';
 import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useGestorData } from './hooks/useGestorData';
 import { DOMAINS } from '../../data/questionnaireData';
 import { groupBySegment } from '../../services/analyticsService';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);

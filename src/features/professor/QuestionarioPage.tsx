@@ -11,8 +11,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SendIcon from '@mui/icons-material/Send';
-import { ProgressBar } from '../../components/data-display/ProgressBar';
-import { useToast } from '../../components/feedback/ToastProvider';
+import { ProgressBar } from '../../components/ui/data-display/ProgressBar';
+import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   getOrSeedQuestionnaire,
@@ -20,7 +20,7 @@ import {
 } from '../../services/firestoreService';
 import { DOMAINS, PROFESSOR_QUESTIONS, LIKERT_LABELS } from '../../data/questionnaireData';
 import { UserRole } from '../../types';
-import { colors, radius } from '../../components/tokens';
+import { colors, radius } from '../../components/ui/tokens';
 
 const DOMAIN_DESCRIPTIONS: Record<string, string> = {
   plan: 'Como você planeja suas aulas e organiza o currículo.',

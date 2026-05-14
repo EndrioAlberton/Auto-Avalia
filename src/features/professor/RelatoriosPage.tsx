@@ -6,19 +6,19 @@ import Tab from '@mui/material/Tab';
 import Grid from '@mui/material/Grid2';
 import CircularProgress from '@mui/material/CircularProgress';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { ContentCard } from '../../components/data-display/ContentCard';
-import { StatCard } from '../../components/data-display/StatCard';
-import { EmptyState } from '../../components/data-display/EmptyState';
-import { DataTable } from '../../components/data-display/DataTable';
-import { Badge } from '../../components/primitives/Badge';
+import { PageHeader } from '../../components/ui/layout/PageHeader';
+import { ContentCard } from '../../components/ui/data-display/ContentCard';
+import { StatCard } from '../../components/ui/data-display/StatCard';
+import { EmptyState } from '../../components/ui/data-display/EmptyState';
+import { DataTable } from '../../components/ui/data-display/DataTable';
+import { Badge } from '../../components/ui/primitives/Badge';
 import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { EvolutionLineChart } from '../analytics/charts/EvolutionLineChart';
 import { useProfessorData } from './hooks/useProfessorData';
 import { DOMAINS } from '../../data/questionnaireData';
 import { formatFirestoreDate } from '../../services/analyticsService';
-import { colors } from '../../components/tokens';
+import { colors } from '../../components/ui/tokens';
 
 export function RelatoriosPage() {
   const navigate = useNavigate();

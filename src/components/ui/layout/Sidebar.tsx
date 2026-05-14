@@ -11,7 +11,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { NavConfig } from './nav.types';
 import { colors, radius, motion } from '../tokens';
-import { initials } from '../../utils/userUtils';
+import { initials } from '../../../utils/userUtils';
 
 interface SidebarProps {
   navConfig: NavConfig;
