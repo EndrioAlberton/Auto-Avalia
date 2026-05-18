@@ -74,17 +74,17 @@ export function InicioPage() {
 
       {hasResponded && (
         <>
-          <Grid container spacing={2} mb={3}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid container spacing={2} mb={3} alignItems="stretch">
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: 'flex' }}>
               <StatCard label="Pontuação Geral" value={overallScore.toFixed(1)} sub="de 5.0" />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: 'flex' }}>
               <StatCard label="Avaliações Realizadas" value={myResponses.length} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: 'flex' }}>
               <StatCard label="Ponto Mais Forte" value={strengths[0]?.split(' (')[0] ?? '—'} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: 'flex' }}>
               <StatCard label="A Desenvolver" value={improvements[0]?.split(' (')[0] ?? '—'} />
             </Grid>
           </Grid>

@@ -53,14 +53,14 @@ export function InicioPage() {
 
       {hasSchool && (
         <>
-          <Grid container spacing={2} mb={3}>
-            <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid container spacing={2} mb={3} alignItems="stretch">
+            <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
               <StatCard label="Professores na equipe" value={teachers.length} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
               <StatCard label="Taxa de resposta" value={`${responseRate}%`} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
               <StatCard
                 label="Pontuação média"
                 value={

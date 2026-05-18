@@ -13,7 +13,7 @@ interface PageHeaderProps {
 export function PageHeader({ eyebrow, title, action }: PageHeaderProps) {
   return (
     <Box sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           {eyebrow && (
             <Typography

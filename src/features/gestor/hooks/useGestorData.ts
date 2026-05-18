@@ -24,6 +24,7 @@ export interface GestorData {
   schoolScores: DomainScore[] | null;
   responseRate: number;
   studentsCount: number;
+  studentResponses: any[];
   questionnaire: Questionnaire | null;
   loading: boolean;
   error: string;
@@ -38,6 +39,7 @@ export function useGestorData(): GestorData {
   const [schoolResponses, setSchoolResponses] = useState<any[]>([]);
   const [schoolScores, setSchoolScores] = useState<DomainScore[] | null>(null);
   const [studentsCount, setStudentsCount] = useState(0);
+  const [studentResponses, setStudentResponses] = useState<any[]>([]);
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -77,6 +79,7 @@ export function useGestorData(): GestorData {
         setSchoolResponses(resp);
         setSchoolScores(responsesToAvgScores(resp));
         setStudentsCount(studResp.length);
+        setStudentResponses(studResp);
         setQuestionnaire(q);
       } catch (e: unknown) {
         if (!cancelled) setError((e as Error)?.message ?? 'Erro ao carregar dados');
@@ -103,6 +106,7 @@ export function useGestorData(): GestorData {
     schoolScores,
     responseRate,
     studentsCount,
+    studentResponses,
     questionnaire,
     loading,
     error,

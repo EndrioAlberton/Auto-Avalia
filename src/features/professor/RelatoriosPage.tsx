@@ -69,9 +69,9 @@ export function RelatoriosPage() {
 
       {tab === 0 && (
         <Box>
-          <Grid container spacing={2} mb={3}>
+          <Grid container spacing={2} mb={3} alignItems="stretch">
             {myScores.map((d) => (
-              <Grid key={d.domain} size={{ xs: 6, sm: 4, md: 'auto' }}>
+              <Grid key={d.domain} size={{ xs: 6, sm: 4, md: 'auto' }} sx={{ display: 'flex' }}>
                 <StatCard label={d.label} value={d.score.toFixed(1)} />
               </Grid>
             ))}

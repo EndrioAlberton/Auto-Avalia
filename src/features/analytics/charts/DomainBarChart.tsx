@@ -21,12 +21,13 @@ interface DomainBarChartProps {
   data: DomainBarData[];
   keys: string[];
   keyLabels?: Record<string, string>;
+  tooltipLabelMap?: Record<string, string>;
   loading?: boolean;
 }
 
 const KEY_COLORS = [colors.accent, colors.inkSubtle, domainColors.domain2];
 
-export function DomainBarChart({ data, keys, keyLabels, loading }: DomainBarChartProps) {
+export function DomainBarChart({ data, keys, keyLabels, tooltipLabelMap, loading }: DomainBarChartProps) {
   if (loading) return <Skeleton height={260} />;
 
   return (
@@ -47,12 +48,15 @@ export function DomainBarChart({ data, keys, keyLabels, loading }: DomainBarChar
           tickLine={false}
         />
         <Tooltip
+          labelFormatter={(label) => tooltipLabelMap?.[label as string] ?? label}
           contentStyle={{
             background: colors.surface2,
             border: `1px solid ${colors.hairline}`,
             borderRadius: 8,
             color: colors.ink,
             fontSize: 13,
+            maxWidth: 280,
+            whiteSpace: 'normal',
           }}
         />
         {keys.length > 1 && (

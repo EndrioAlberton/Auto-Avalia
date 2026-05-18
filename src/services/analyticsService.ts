@@ -2,7 +2,7 @@
 // Converte respostas brutas do Firestore em dados de relatório
 
 import { QuestionnaireResponse } from '../types';
-import { DOMAIN_QUESTION_IDS, DOMAINS } from '../data/questionnaireData';
+import { DOMAIN_QUESTION_IDS, DOMAINS, STUDENT_QUESTIONS } from '../data/questionnaireData';
 
 // ── INTERFACES ────────────────────────────────────────────────────────────────
 
@@ -193,6 +193,49 @@ export function overallScore(scores: DomainScore[]): number {
   const valid = scores.filter(s => s.score > 0);
   if (valid.length === 0) return 0;
   return parseFloat((valid.reduce((s, d) => s + d.score, 0) / valid.length).toFixed(1));
+}
+
+// ── ANALYTICS DE ESTUDANTES ───────────────────────────────────────────────────
+
+export interface StudentQuestionAvg {
+  questionId: string;
+  text: string;
+  emoji: string;
+  avg: number;
+  count: number;
+}
+
+/** Calcula média por questão a partir de respostas anônimas de estudantes */
+export function studentResponsesToAvgScores(responses: any[]): StudentQuestionAvg[] {
+  const totals: Record<string, { sum: number; count: number }> = {};
+
+  for (const r of responses) {
+    for (const a of (r.answers ?? [])) {
+      const val = Number(a.value);
+      if (!val || val < 1 || val > 5) continue;
+      if (!totals[a.questionId]) totals[a.questionId] = { sum: 0, count: 0 };
+      totals[a.questionId].sum += val;
+      totals[a.questionId].count += 1;
+    }
+  }
+
+  return STUDENT_QUESTIONS.map((q) => {
+    const t = totals[q.id];
+    return {
+      questionId: q.id,
+      text: q.text,
+      emoji: q.emoji,
+      avg: t ? parseFloat((t.sum / t.count).toFixed(2)) : 0,
+      count: t?.count ?? 0,
+    };
+  });
+}
+
+/** Média geral de satisfação dos estudantes */
+export function studentOverallAvg(avgs: StudentQuestionAvg[]): number {
+  const valid = avgs.filter((a) => a.count > 0);
+  if (valid.length === 0) return 0;
+  return parseFloat((valid.reduce((s, a) => s + a.avg, 0) / valid.length).toFixed(1));
 }
 
 /** Formata data do Firestore Timestamp para string legível */
