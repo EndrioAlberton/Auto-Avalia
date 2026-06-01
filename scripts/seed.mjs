@@ -199,7 +199,7 @@ const PROFESSOR_QUESTIONS = [
 const PROFESSOR_RESPONSES = [
   // ── Ana Souza: resposta antiga (6 meses) — nível intermediário ───────────
   {
-    email: 'professor@self.edu.br', monthsAgo: 6,
+    email: 'professor@self.edu.br', monthsAgo: 6, segment: 'anos_finais',
     answers: {
       ctx1:'Ensino Fundamental - Anos Finais', ctx1b:'Matemática e Física',
       ctx2:'Intermitente/Parcial', ctx3:'Falta de equipamento próprio', ctx4:3,
@@ -211,7 +211,7 @@ const PROFESSOR_RESPONSES = [
   },
   // ── Ana Souza: resposta recente (hoje) — avançado/integrador ─────────────
   {
-    email: 'professor@self.edu.br', monthsAgo: 0,
+    email: 'professor@self.edu.br', monthsAgo: 0, segment: 'anos_finais',
     answers: {
       ctx1:'Ensino Fundamental - Anos Finais', ctx1b:'Matemática e Física',
       ctx2:'Intermitente/Parcial', ctx3:'Falta de equipamento próprio', ctx4:4,
@@ -223,7 +223,7 @@ const PROFESSOR_RESPONSES = [
   },
   // ── Bruno Costa: forte em PK/PCK, médio em TK/TCK ───────────────────────
   {
-    email: 'professor2@self.edu.br', monthsAgo: 1,
+    email: 'professor2@self.edu.br', monthsAgo: 1, segment: 'anos_finais',
     answers: {
       ctx1:'Ensino Fundamental - Anos Finais', ctx1b:'Língua Portuguesa e Literatura',
       ctx2:'Adequada e constante', ctx3:'Baixo letramento digital das famílias', ctx4:4,
@@ -235,7 +235,7 @@ const PROFESSOR_RESPONSES = [
   },
   // ── Carla Ferreira: iniciante, infraestrutura crítica ────────────────────
   {
-    email: 'professor3@self.edu.br', monthsAgo: 2,
+    email: 'professor3@self.edu.br', monthsAgo: 2, segment: 'anos_iniciais',
     answers: {
       ctx1:'Ensino Fundamental - Anos Iniciais', ctx1b:'Multidisciplinar',
       ctx2:'Inadequada/Obsoleta', ctx3:'Falta de equipamento próprio', ctx4:2,
@@ -247,7 +247,7 @@ const PROFESSOR_RESPONSES = [
   },
   // ── Diego Almeida: especialista em TK/TCK/TPK ────────────────────────────
   {
-    email: 'professor4@self.edu.br', monthsAgo: 1,
+    email: 'professor4@self.edu.br', monthsAgo: 1, segment: 'anos_finais',
     answers: {
       ctx1:'Ensino Fundamental - Anos Finais', ctx1b:'Informática / Tecnologia',
       ctx2:'Adequada e constante', ctx3:'Nenhuma barreira significativa', ctx4:5,
@@ -259,7 +259,7 @@ const PROFESSOR_RESPONSES = [
   },
   // ── Eduarda Lima: equilibrada, barreira de dados ─────────────────────────
   {
-    email: 'professor5@self.edu.br', monthsAgo: 0,
+    email: 'professor5@self.edu.br', monthsAgo: 0, segment: 'anos_finais',
     answers: {
       ctx1:'Ensino Fundamental - Anos Finais', ctx1b:'História e Geografia',
       ctx2:'Intermitente/Parcial', ctx3:'Falta de pacote de dados/internet em casa', ctx4:3,
@@ -430,6 +430,7 @@ async function phase5_professorResponses(db, uids, schoolId, profQId) {
       userId: uid,
       schoolId,
       networkId: NETWORK_ID,
+      segment: resp.segment ?? null,
       answers: answersFromMap(resp.answers),
       completedAt,
     });
