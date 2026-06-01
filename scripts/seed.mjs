@@ -132,44 +132,75 @@ const USERS = [
   },
 ];
 
-// Questionário de professor — RME-POA (Tecnologias Digitais)
+// Questionário de professor — TPACK / RME-POA
 const PROFESSOR_QUESTIONS = [
-  // Contextualização da RME-POA
-  { id:'ctx1', domain:'ctx', order:1,  type:'text',   required:true,  targetRole:['professor'],
-    text:'Em qual etapa de ensino e componente curricular você atua majoritariamente na Rede Municipal de Porto Alegre?' },
-  { id:'ctx2', domain:'ctx', order:2,  type:'choice', required:true,  targetRole:['professor'],
+  // I. Contextualização
+  { id:'ctx1',  domain:'ctx',   section:'ctx',       order:1,  type:'choice', required:true,  targetRole:['professor'],
+    text:'Em qual etapa de ensino você atua majoritariamente na Rede Municipal de Porto Alegre?',
+    options:['Educação Infantil','Ensino Fundamental - Anos Iniciais','Ensino Fundamental - Anos Finais','Educação de Jovens e Adultos (EJA)','Outro'] },
+  { id:'ctx1b', domain:'ctx',   section:'ctx',       order:2,  type:'text',   required:false, targetRole:['professor'],
+    text:'Componente curricular que você leciona:' },
+  { id:'ctx2',  domain:'ctx',   section:'ctx',       order:3,  type:'choice', required:true,  targetRole:['professor'],
     text:'Como você avalia a disponibilidade real de equipamentos (ex: Chromebooks da SMED) e a estabilidade da internet para uso pedagógico com a turma inteira na sua escola?',
     options:['Adequada e constante','Intermitente/Parcial','Inadequada/Obsoleta','Dependo exclusivamente do celular dos alunos'] },
-  { id:'ctx3', domain:'ctx', order:3,  type:'choice', required:true,  targetRole:['professor'],
+  { id:'ctx3',  domain:'ctx',   section:'ctx',       order:4,  type:'choice', required:true,  targetRole:['professor'],
     text:'Qual é a principal barreira estrutural que seus alunos enfrentam para o uso de tecnologias digitais?',
-    options:['Falta de equipamento próprio','Falta de pacote de dados/internet em casa','Baixo letramento digital das famílias','Nenhuma barreira significativa'] },
-  { id:'ctx4', domain:'ctx', order:4,  type:'scale',  required:true,  targetRole:['professor'],
+    options:['Falta de equipamento próprio','Falta de pacote de dados/internet em casa','Baixo letramento digital das famílias','Nenhuma barreira significativa','Outra'] },
+  { id:'ctx4',  domain:'ctx',   section:'ctx',       order:5,  type:'scale',  required:true,  targetRole:['professor'],
     text:'A gestão da minha escola estimula o uso autoral e reflexivo das tecnologias digitais, oferecendo apoio prático em vez de apenas cobrar o cumprimento de metas ou o uso obrigatório de plataformas.' },
-  // Reflexão Docente
-  { id:'ref1', domain:'ref', order:5,  type:'scale',  required:true,  targetRole:['professor'],
+  // II. TK
+  { id:'tk1',   domain:'tk',    section:'base',      order:6,  type:'scale',  required:true,  targetRole:['professor'],
+    text:'Sinto-me confortável e competente para utilizar uma variedade de ferramentas e recursos digitais (softwares, aplicativos, plataformas online) no meu dia a dia profissional e pessoal.' },
+  { id:'tk2',   domain:'tk',    section:'base',      order:7,  type:'scale',  required:true,  targetRole:['professor'],
+    text:'Busco ativamente aprender sobre novas tecnologias digitais e suas funcionalidades, mesmo que não sejam diretamente relacionadas à minha disciplina.' },
+  // III. PK
+  { id:'pk1',   domain:'pk',    section:'base',      order:8,  type:'scale',  required:true,  targetRole:['professor'],
+    text:'Consigo adaptar minhas estratégias pedagógicas para atender às diferentes necessidades e estilos de aprendizagem dos meus alunos.' },
+  { id:'pk2',   domain:'pk',    section:'base',      order:9,  type:'scale',  required:true,  targetRole:['professor'],
+    text:'Utilizo diferentes abordagens pedagógicas (ex: trabalho em grupo, projetos, ensino investigativo) para promover a participação ativa e o engajamento dos alunos.' },
+  // IV. CK
+  { id:'ck1',   domain:'ck',    section:'base',      order:10, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Tenho um domínio aprofundado do conteúdo da(s) disciplina(s) que leciono, incluindo conceitos fundamentais, teorias e aplicações práticas.' },
+  { id:'ck2',   domain:'ck',    section:'base',      order:11, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Consigo explicar conceitos complexos da minha disciplina de diferentes maneiras, utilizando exemplos e analogias que facilitam a compreensão dos alunos.' },
+  // V. PCK
+  { id:'pck1',  domain:'pck',   section:'intersect', order:12, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Seleciono e organizo o conteúdo da minha disciplina de forma a facilitar a aprendizagem dos alunos, considerando suas experiências prévias e desafios comuns.' },
+  { id:'pck2',  domain:'pck',   section:'intersect', order:13, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Utilizo estratégias de ensino específicas que são mais eficazes para abordar os conceitos e habilidades da minha disciplina.' },
+  // V. TCK
+  { id:'tck1',  domain:'tck',   section:'intersect', order:14, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Conheço e seleciono tecnologias digitais que são mais adequadas para representar e explorar os conteúdos específicos da minha disciplina (ex: simuladores para ciências, linhas do tempo interativas para história, editores colaborativos para português).' },
+  { id:'tck2',  domain:'tck',   section:'intersect', order:15, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Entendo como as características de diferentes tecnologias digitais podem influenciar a forma como o conteúdo da minha disciplina é compreendido e trabalhado pelos alunos.' },
+  // V. TPK
+  { id:'tpk1',  domain:'tpk',   section:'intersect', order:16, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Utilizo tecnologias digitais para implementar estratégias pedagógicas inovadoras que promovem o engajamento, a colaboração e a personalização da aprendizagem dos alunos.' },
+  { id:'tpk2',  domain:'tpk',   section:'intersect', order:17, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Consigo adaptar o uso de tecnologias digitais para diferentes contextos de sala de aula e para atender a diversas abordagens pedagógicas (ex: ferramentas de votação para feedback instantâneo, plataformas de discussão para debates online).' },
+  // V. TPACK
+  { id:'tpack1',domain:'tpack', section:'intersect', order:18, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Ao planejar minhas aulas, integro de forma coerente e significativa o conteúdo da minha disciplina, as estratégias pedagógicas e as tecnologias digitais, visando maximizar a aprendizagem dos alunos.' },
+  { id:'tpack2',domain:'tpack', section:'intersect', order:19, type:'scale',  required:true,  targetRole:['professor'],
+    text:'Sou capaz de criar e adaptar atividades de aprendizagem que utilizam tecnologias digitais para abordar conceitos específicos da minha disciplina de maneira pedagógica e eficaz, promovendo a reflexão crítica e a autonomia dos estudantes.' },
+  { id:'tpack3',domain:'tpack', section:'intersect', order:20, type:'scale',  required:true,  targetRole:['professor'],
     text:'Utilizo as tecnologias digitais como ferramentas para fortalecer o trabalho colaborativo com outros professores da RME-POA, trocando experiências e construindo projetos pedagógicos em conjunto, evitando o isolamento profissional.' },
-  { id:'ref2', domain:'ref', order:6,  type:'scale',  required:true,  targetRole:['professor'],
+  { id:'tpack4',domain:'tpack', section:'intersect', order:21, type:'scale',  required:true,  targetRole:['professor'],
     text:'As formações sobre tecnologia nas quais participo me ajudam a refletir criticamente sobre as finalidades educacionais do uso do digital, indo além do mero "treinamento técnico" para apertar botões ou usar plataformas padronizadas.' },
-  { id:'ref3', domain:'ref', order:7,  type:'scale',  required:true,  targetRole:['professor'],
-    text:'Sinto que possuo autonomia profissional para decidir quando e como integrar as tecnologias digitais no meu planejamento, adequando-as à realidade dos meus alunos, sem me sentir pressionado por lógicas de controle externo.' },
-  { id:'ref4', domain:'ref', order:8,  type:'scale',  required:true,  targetRole:['professor'],
-    text:'Ao planejar minhas aulas com tecnologias, considero ativamente as vulnerabilidades sociais da minha turma, selecionando recursos acessíveis (leves ou offline) e sempre prevendo alternativas pedagógicas caso a internet da escola falhe.' },
-  { id:'ref5', domain:'ref', order:9,  type:'scale',  required:true,  targetRole:['professor'],
-    text:'Nas minhas aulas, as tecnologias são utilizadas pelos estudantes de forma ativa (para pesquisar, criar projetos, debater o mundo), superando o uso da tecnologia apenas para a "transmissão" passiva de conteúdos ou adestramento comportamental.' },
-  { id:'ref6', domain:'ref', order:10, type:'scale',  required:true,  targetRole:['professor'],
-    text:'Promovo debates críticos com os alunos sobre o mundo digital, abordando temas como privacidade de dados, algoritmos, fake news e segurança online, ajudando-os a resistir à lógica de consumo e controle das grandes plataformas tecnológicas.' },
-  // Avaliação Formativa
-  { id:'av1', domain:'aval', order:11, type:'scale',  required:true,  targetRole:['professor'],
+  // VI. AFR
+  { id:'afr1',  domain:'afr',   section:'afr',       order:22, type:'scale',  required:true,  targetRole:['professor'],
     text:'Utilizo ferramentas digitais para realizar avaliações formativas que me ajudam a dar feedbacks rápidos e apoiar o desenvolvimento do estudante, não permitindo que a tecnologia reduza a avaliação a um mero ranqueamento ou controle de métricas.' },
-  { id:'av2', domain:'aval', order:12, type:'scale',  required:true,  targetRole:['professor'],
+  { id:'afr2',  domain:'afr',   section:'afr',       order:23, type:'scale',  required:true,  targetRole:['professor'],
     text:'Utilizo os dados gerados pelas ferramentas digitais como apoio para a minha própria reflexão docente e replanejamento, e não como instrumentos de vigilância sobre a minha prática ou sobre os estudantes.' },
-  // Questões de Ajuste (opcionais)
-  { id:'meta1', domain:'meta', order:13, type:'open', required:false, targetRole:['professor'],
-    text:'A linguagem está adequada à nossa realidade de rede municipal? Deixe seu comentário.' },
-  { id:'meta2', domain:'meta', order:14, type:'open', required:false, targetRole:['professor'],
-    text:'Estas perguntas nos ajudam a refletir sobre o nosso poder de decisão, ou parecem uma cobrança da SMED? Compartilhe sua percepção.' },
-  { id:'meta3', domain:'meta', order:15, type:'open', required:false, targetRole:['professor'],
-    text:'A ferramenta capta bem a diferença entre "usar um Chromebook para inovar" e "usar um Chromebook para treinar para provas padronizadas"? O que poderia ser melhorado?' },
+  // VII. Questões Abertas
+  { id:'meta1', domain:'meta',  section:'meta',      order:24, type:'open',   required:false, targetRole:['professor'],
+    text:'Em sua opinião, a linguagem utilizada nesta avaliação está adequada à nossa realidade de rede municipal? Por favor, justifique sua resposta.' },
+  { id:'meta2', domain:'meta',  section:'meta',      order:25, type:'open',   required:false, targetRole:['professor'],
+    text:'Estas perguntas o(a) ajudam a refletir sobre o seu poder de decisão e autonomia no uso das tecnologias digitais em sala de aula, ou parecem uma cobrança da SMED? Por favor, justifique sua percepção.' },
+  { id:'meta3', domain:'meta',  section:'meta',      order:26, type:'open',   required:false, targetRole:['professor'],
+    text:'A ferramenta consegue captar bem a diferença entre "usar um Chromebook para inovar e promover a autonomia dos alunos" e "usar um Chromebook apenas para treinar para provas padronizadas ou cumprir metas"? Por favor, explique.' },
+  { id:'meta4', domain:'meta',  section:'meta',      order:27, type:'open',   required:false, targetRole:['professor'],
+    text:'Quais outros aspectos relacionados ao uso de tecnologias digitais em sua prática pedagógica você considera importantes e que não foram abordados nesta avaliação?' },
 ];
 
 // Questionário de estudante: IDs e1-e10
@@ -186,72 +217,92 @@ const STUDENT_QUESTIONS = [
   { id:'e10', order:10, emoji:'💡', text:'Me sinto encorajado(a) a participar e expressar minhas opiniões nas aulas.' },
 ];
 
-// Respostas dos professores (ctx1/ctx2/ctx3 = texto/escolha; escala = 1-5)
+// Respostas dos professores — novos IDs TPACK (escala 1-5)
 // Ana tem 2 entradas para mostrar evolução; os demais têm 1
 const PROFESSOR_RESPONSES = [
-  // ── Ana Souza: resposta antiga (6 meses) ─────────────────────────────────
+  // ── Ana Souza: resposta antiga (6 meses) — nível intermediário ───────────
   {
     email: 'professor@self.edu.br',
     monthsAgo: 6,
     answers: {
-      ctx1: 'Anos Finais — Matemática e Física',
-      ctx2: 'Intermitente/Parcial',
-      ctx3: 'Falta de equipamento próprio',
-      ctx4: 3,
-      ref1:3, ref2:3, ref3:3, ref4:3, ref5:3, ref6:2,  // ref ≈ 2.8
-      av1:3,  av2:3,                                     // aval ≈ 3.0
+      ctx1: 'Ensino Fundamental - Anos Finais', ctx1b: 'Matemática e Física',
+      ctx2: 'Intermitente/Parcial', ctx3: 'Falta de equipamento próprio', ctx4: 3,
+      tk1:3, tk2:3,           // TK ≈ 3.0
+      pk1:3, pk2:3,           // PK ≈ 3.0
+      ck1:4, ck2:4,           // CK ≈ 4.0
+      pck1:3, pck2:3,         // PCK ≈ 3.0
+      tck1:2, tck2:3,         // TCK ≈ 2.5
+      tpk1:3, tpk2:2,         // TPK ≈ 2.5
+      tpack1:3, tpack2:3, tpack3:3, tpack4:2,  // TPACK ≈ 2.75
+      afr1:3, afr2:3,         // AFR ≈ 3.0
     },
   },
-  // ── Ana Souza: resposta recente (hoje) ───────────────────────────────────
+  // ── Ana Souza: resposta recente (hoje) — avançado/integrador ─────────────
   {
     email: 'professor@self.edu.br',
     monthsAgo: 0,
     answers: {
-      ctx1: 'Anos Finais — Matemática e Física',
-      ctx2: 'Intermitente/Parcial',
-      ctx3: 'Falta de equipamento próprio',
-      ctx4: 4,
-      ref1:5, ref2:4, ref3:4, ref4:5, ref5:4, ref6:4,  // ref ≈ 4.3
-      av1:4,  av2:5,                                     // aval ≈ 4.5
+      ctx1: 'Ensino Fundamental - Anos Finais', ctx1b: 'Matemática e Física',
+      ctx2: 'Intermitente/Parcial', ctx3: 'Falta de equipamento próprio', ctx4: 4,
+      tk1:4, tk2:4,           // TK ≈ 4.0
+      pk1:5, pk2:4,           // PK ≈ 4.5
+      ck1:5, ck2:5,           // CK ≈ 5.0
+      pck1:4, pck2:5,         // PCK ≈ 4.5
+      tck1:4, tck2:4,         // TCK ≈ 4.0
+      tpk1:4, tpk2:4,         // TPK ≈ 4.0
+      tpack1:4, tpack2:4, tpack3:5, tpack4:4,  // TPACK ≈ 4.25
+      afr1:4, afr2:5,         // AFR ≈ 4.5
     },
   },
-  // ── Bruno Costa: forte em reflexão, médio em avaliação ───────────────────
+  // ── Bruno Costa: forte em PK/PCK, médio em TK/TCK ───────────────────────
   {
     email: 'professor2@self.edu.br',
     monthsAgo: 1,
     answers: {
-      ctx1: 'Anos Finais — Língua Portuguesa e Literatura',
-      ctx2: 'Adequada e constante',
-      ctx3: 'Baixo letramento digital das famílias',
-      ctx4: 4,
-      ref1:4, ref2:5, ref3:4, ref4:4, ref5:5, ref6:5,  // ref ≈ 4.5
-      av1:3,  av2:3,                                     // aval ≈ 3.0
+      ctx1: 'Ensino Fundamental - Anos Finais', ctx1b: 'Língua Portuguesa e Literatura',
+      ctx2: 'Adequada e constante', ctx3: 'Baixo letramento digital das famílias', ctx4: 4,
+      tk1:3, tk2:3,           // TK ≈ 3.0
+      pk1:5, pk2:5,           // PK ≈ 5.0
+      ck1:5, ck2:5,           // CK ≈ 5.0
+      pck1:5, pck2:5,         // PCK ≈ 5.0
+      tck1:3, tck2:3,         // TCK ≈ 3.0
+      tpk1:4, tpk2:3,         // TPK ≈ 3.5
+      tpack1:4, tpack2:4, tpack3:4, tpack4:5,  // TPACK ≈ 4.25
+      afr1:3, afr2:3,         // AFR ≈ 3.0
     },
   },
-  // ── Carla Ferreira: professora iniciante, infraestrutura crítica ──────────
+  // ── Carla Ferreira: iniciante, infraestrutura crítica ────────────────────
   {
     email: 'professor3@self.edu.br',
     monthsAgo: 2,
     answers: {
-      ctx1: 'Anos Iniciais — Multidisciplinar',
-      ctx2: 'Inadequada/Obsoleta',
-      ctx3: 'Falta de equipamento próprio',
-      ctx4: 2,
-      ref1:2, ref2:3, ref3:3, ref4:3, ref5:2, ref6:2,  // ref ≈ 2.5
-      av1:3,  av2:2,                                     // aval ≈ 2.5
+      ctx1: 'Ensino Fundamental - Anos Iniciais', ctx1b: 'Multidisciplinar',
+      ctx2: 'Inadequada/Obsoleta', ctx3: 'Falta de equipamento próprio', ctx4: 2,
+      tk1:2, tk2:2,           // TK ≈ 2.0
+      pk1:3, pk2:3,           // PK ≈ 3.0
+      ck1:4, ck2:3,           // CK ≈ 3.5
+      pck1:3, pck2:3,         // PCK ≈ 3.0
+      tck1:2, tck2:2,         // TCK ≈ 2.0
+      tpk1:2, tpk2:2,         // TPK ≈ 2.0
+      tpack1:2, tpack2:2, tpack3:2, tpack4:3,  // TPACK ≈ 2.25
+      afr1:3, afr2:2,         // AFR ≈ 2.5
     },
   },
-  // ── Diego Almeida: infraestrutura boa, uso crítico alto ──────────────────
+  // ── Diego Almeida: especialista em TK/TCK/TPK ────────────────────────────
   {
     email: 'professor4@self.edu.br',
     monthsAgo: 1,
     answers: {
-      ctx1: 'Ensino Médio — Informática / Tecnologia',
-      ctx2: 'Adequada e constante',
-      ctx3: 'Nenhuma barreira significativa',
-      ctx4: 5,
-      ref1:5, ref2:4, ref3:4, ref4:4, ref5:5, ref6:4,  // ref ≈ 4.3
-      av1:5,  av2:4,                                     // aval ≈ 4.5
+      ctx1: 'Ensino Fundamental - Anos Finais', ctx1b: 'Informática / Tecnologia',
+      ctx2: 'Adequada e constante', ctx3: 'Nenhuma barreira significativa', ctx4: 5,
+      tk1:5, tk2:5,           // TK ≈ 5.0
+      pk1:4, pk2:4,           // PK ≈ 4.0
+      ck1:5, ck2:4,           // CK ≈ 4.5
+      pck1:4, pck2:4,         // PCK ≈ 4.0
+      tck1:5, tck2:5,         // TCK ≈ 5.0
+      tpk1:5, tpk2:5,         // TPK ≈ 5.0
+      tpack1:5, tpack2:5, tpack3:4, tpack4:4,  // TPACK ≈ 4.5
+      afr1:5, afr2:4,         // AFR ≈ 4.5
     },
   },
   // ── Eduarda Lima: equilibrada, barreira de dados ─────────────────────────
@@ -259,12 +310,16 @@ const PROFESSOR_RESPONSES = [
     email: 'professor5@self.edu.br',
     monthsAgo: 0,
     answers: {
-      ctx1: 'Anos Finais — História e Geografia',
-      ctx2: 'Intermitente/Parcial',
-      ctx3: 'Falta de pacote de dados/internet em casa',
-      ctx4: 3,
-      ref1:4, ref2:4, ref3:4, ref4:4, ref5:4, ref6:4,  // ref ≈ 4.0
-      av1:4,  av2:4,                                     // aval ≈ 4.0
+      ctx1: 'Ensino Fundamental - Anos Finais', ctx1b: 'História e Geografia',
+      ctx2: 'Intermitente/Parcial', ctx3: 'Falta de pacote de dados/internet em casa', ctx4: 3,
+      tk1:4, tk2:3,           // TK ≈ 3.5
+      pk1:4, pk2:4,           // PK ≈ 4.0
+      ck1:4, ck2:4,           // CK ≈ 4.0
+      pck1:4, pck2:4,         // PCK ≈ 4.0
+      tck1:3, tck2:4,         // TCK ≈ 3.5
+      tpk1:4, tpk2:3,         // TPK ≈ 3.5
+      tpack1:4, tpack2:4, tpack3:4, tpack4:4,  // TPACK ≈ 4.0
+      afr1:4, afr2:4,         // AFR ≈ 4.0
     },
   },
 ];

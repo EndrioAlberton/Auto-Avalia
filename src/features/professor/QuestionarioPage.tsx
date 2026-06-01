@@ -23,20 +23,19 @@ import { SECTIONS, PROFESSOR_QUESTIONS, LIKERT_LABELS, SUBJECT_OPTIONS } from '.
 import { UserRole } from '../../types';
 import { colors, radius } from '../../components/ui/tokens';
 
-const SEGMENT_LABELS: Record<string, string> = {
+const SEGMENT_TO_ETAPA: Record<string, string> = {
   educacao_infantil: 'Educação Infantil',
-  anos_iniciais:     'Anos Iniciais',
-  anos_finais:       'Anos Finais',
-  ensino_medio:      'Ensino Médio',
-  eja:               'EJA',
-  educacao_especial: 'Educação Especial',
+  anos_iniciais:     'Ensino Fundamental - Anos Iniciais',
+  anos_finais:       'Ensino Fundamental - Anos Finais',
+  eja:               'Educação de Jovens e Adultos (EJA)',
 };
 
 const SECTION_DESCRIPTIONS: Record<string, string> = {
-  ctx:  'Infraestrutura, acesso digital e apoio institucional na sua escola.',
-  ref:  'Como você integra e problematiza o digital na sua prática pedagógica.',
-  aval: 'Como você usa ferramentas digitais para avaliar e replanejar.',
-  meta: 'Suas impressões sobre esta ferramenta — ajude a melhorá-la (opcional).',
+  ctx:       'Infraestrutura, acesso digital e apoio institucional na sua escola.',
+  base:      'Seu conhecimento tecnológico, pedagógico e de conteúdo — as bases do TPACK.',
+  intersect: 'Como você integra tecnologia, pedagogia e conteúdo na sua prática docente.',
+  afr:       'Como você usa ferramentas digitais para avaliar e replanejar.',
+  meta:      'Suas impressões sobre esta ferramenta — ajude a melhorá-la (opcional).',
 };
 
 const REQUIRED_QUESTIONS = PROFESSOR_QUESTIONS.filter((q) => q.required);
@@ -64,29 +63,31 @@ export function QuestionarioPage() {
 
   useEffect(() => { loadQuestionnaire(); }, [loadQuestionnaire]);
 
-  // Pré-preenche ctx1 com dados do perfil do professor
+  // Pré-preenche ctx1 (etapa) e ctx1b (componente) do perfil do professor
   useEffect(() => {
     if (!currentUser) return;
     const user = currentUser as any;
     const segments: string[] = user.segment ?? [];
     const subjects: string[] = user.subjects ?? [];
-    if (!segments.length && !subjects.length) return;
 
-    const segLabel = segments
-      .map((s: string) => SEGMENT_LABELS[s] ?? s)
-      .join(' e ');
-    const subLabel = subjects
-      .map((s: string) => SUBJECT_OPTIONS.find((o) => o.value === s)?.label ?? s)
-      .join(', ');
-    const prefill = [segLabel, subLabel].filter(Boolean).join(' — ');
-
-    setAnswers((prev) => ({ ...prev, ctx1: prev.ctx1 ?? prefill }));
+    setAnswers((prev) => {
+      const next = { ...prev };
+      if (!next.ctx1 && segments.length > 0) {
+        next.ctx1 = SEGMENT_TO_ETAPA[segments[0]] ?? 'Outro';
+      }
+      if (!next.ctx1b && subjects.length > 0) {
+        next.ctx1b = subjects
+          .map((s: string) => SUBJECT_OPTIONS.find((o) => o.value === s)?.label ?? s)
+          .join(', ');
+      }
+      return next;
+    });
   }, [currentUser]);
 
   const IS_REVIEW = step === SECTIONS.length;
   const currentSection = !IS_REVIEW ? SECTIONS[step] : null;
   const sectionQuestions = currentSection
-    ? PROFESSOR_QUESTIONS.filter((q) => q.domain === currentSection.key)
+    ? PROFESSOR_QUESTIONS.filter((q) => q.section === currentSection.key)
     : [];
   const allAnswered = sectionQuestions
     .filter((q) => q.required)
@@ -335,7 +336,7 @@ export function QuestionarioPage() {
                 <Typography sx={{ fontWeight: 600, color: colors.ink }}>{section.label}</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                {PROFESSOR_QUESTIONS.filter((q) => q.domain === section.key).map((q, idx) => (
+                {PROFESSOR_QUESTIONS.filter((q) => q.section === section.key).map((q, idx) => (
                   <Box key={q.id} mb={2}>
                     <Typography sx={{ fontSize: 13, color: colors.inkSubtle }}>
                       {idx + 1}. {q.text}
