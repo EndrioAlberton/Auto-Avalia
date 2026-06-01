@@ -213,25 +213,6 @@ export const PROFESSOR_QUESTIONS: QuestionDef[] = [
   },
 ];
 
-export interface StudentQuestionDef {
-  id: string;
-  text: string;
-  emoji: string;
-}
-
-export const STUDENT_QUESTIONS: StudentQuestionDef[] = [
-  { id: 'e1',  text: 'Meu(s) professor(es) explica(m) o conteúdo de formas diferentes quando alguém não entende.', emoji: '📚' },
-  { id: 'e2',  text: 'Me sinto à vontade para tirar dúvidas em sala de aula.', emoji: '🙋' },
-  { id: 'e3',  text: 'As aulas são organizadas e é fácil entender o que vamos aprender no dia.', emoji: '📋' },
-  { id: 'e4',  text: 'O(s) professor(es) me dá(m) um retorno sobre minhas atividades e provas.', emoji: '💬' },
-  { id: 'e5',  text: 'O ambiente da sala de aula é respeitoso — todos se tratam bem.', emoji: '🤝' },
-  { id: 'e6',  text: 'As atividades me fazem pensar e resolver problemas, não só copiar.', emoji: '🧠' },
-  { id: 'e7',  text: 'O(s) professor(es) usa(m) recursos digitais (apps, vídeos) nas aulas.', emoji: '💻' },
-  { id: 'e8',  text: 'Sei exatamente o que preciso fazer para ser bem avaliado(a) nas atividades.', emoji: '🎯' },
-  { id: 'e9',  text: 'As aulas me ajudam a conectar o que estudo com situações da vida real.', emoji: '🌍' },
-  { id: 'e10', text: 'Me sinto encorajado(a) a participar e expressar minhas opiniões nas aulas.', emoji: '💡' },
-];
-
 // ── ÁREAS DE CONHECIMENTO E DISCIPLINAS PRÉ-DEFINIDAS ────────────────────────
 
 export interface SubjectOption {

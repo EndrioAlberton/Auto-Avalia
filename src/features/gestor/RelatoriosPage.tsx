@@ -4,10 +4,8 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import CircularProgress from '@mui/material/CircularProgress';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import PeopleIcon from '@mui/icons-material/People';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
-import { StatCard } from '../../components/ui/data-display/StatCard';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { DataTable } from '../../components/ui/data-display/DataTable';
 import { Badge } from '../../components/ui/primitives/Badge';
@@ -15,13 +13,12 @@ import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useGestorData } from './hooks/useGestorData';
 import { DOMAINS } from '../../data/questionnaireData';
-import { answersToScores, overallScore, groupBySegment, formatFirestoreDate, studentResponsesToAvgScores, studentOverallAvg } from '../../services/analyticsService';
+import { answersToScores, overallScore, groupBySegment, formatFirestoreDate } from '../../services/analyticsService';
 import { colors } from '../../components/ui/tokens';
-import Grid from '@mui/material/Grid2';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
-  const { loading, school, teachers, schoolResponses, schoolScores, studentResponses } = useGestorData();
+  const { loading, school, teachers, schoolResponses, schoolScores } = useGestorData();
 
   if (loading) {
     return (
@@ -32,17 +29,6 @@ export function RelatoriosPage() {
   }
 
   const hasData = schoolResponses.length > 0;
-
-  const studentAvgs = studentResponsesToAvgScores(studentResponses);
-  const studentAvgOverall = studentOverallAvg(studentAvgs);
-  const studentBarData = studentAvgs.map((q) => ({
-    domain: q.questionId,
-    label: `${q.emoji} ${q.questionId.toUpperCase()}`,
-    nota: q.avg,
-  }));
-  const studentTooltipMap = Object.fromEntries(
-    studentAvgs.map((q) => [`${q.emoji} ${q.questionId.toUpperCase()}`, `${q.emoji} ${q.text}`])
-  );
 
   const barData = DOMAINS.map((d) => ({
     domain: d.key,
@@ -94,7 +80,6 @@ export function RelatoriosPage() {
             <Tab label="Coletivo" />
             <Tab label="Por Segmento" />
             <Tab label="Por Professor" />
-            <Tab label="Por Estudante" />
           </Tabs>
 
           {tab === 0 && (
@@ -134,71 +119,6 @@ export function RelatoriosPage() {
                   />
                 </ContentCard>
               </Box>
-            </Box>
-          )}
-
-          {tab === 3 && (
-            <Box>
-              {studentResponses.length === 0 ? (
-                <EmptyState
-                  icon={<PeopleIcon />}
-                  title="Sem respostas de estudantes"
-                  body="Os dados aparecerão quando estudantes responderem o questionário desta escola."
-                />
-              ) : (
-                <Box display="flex" flexDirection="column" gap={2}>
-                  <Grid container spacing={2} alignItems="stretch">
-                    <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
-                      <StatCard label="Respostas coletadas" value={studentResponses.length} />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
-                      <StatCard label="Média geral de satisfação" value={`${studentAvgOverall}/5`} sub="de 1 a 5" />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
-                      <StatCard
-                        label="Questão mais bem avaliada"
-                        value={studentAvgs.filter((a) => a.count > 0).sort((a, b) => b.avg - a.avg)[0]?.emoji ?? '—'}
-                        sub={studentAvgs.filter((a) => a.count > 0).sort((a, b) => b.avg - a.avg)[0]?.questionId.toUpperCase()}
-                      />
-                    </Grid>
-                  </Grid>
-
-                  <ContentCard title="Média por questão">
-                    <DomainBarChart
-                      data={studentBarData}
-                      keys={['nota']}
-                      keyLabels={{ nota: 'Média (1–5)' }}
-                      tooltipLabelMap={studentTooltipMap}
-                    />
-                  </ContentCard>
-
-                  <ContentCard title="Detalhamento por questão" noPadding>
-                    <DataTable
-                      columns={[
-                        { key: 'q', header: 'Questão', render: (r: any) => `${r.emoji} ${r.text}` },
-                        {
-                          key: 'avg',
-                          header: 'Média',
-                          align: 'center' as const,
-                          render: (r: any) => r.count > 0 ? (
-                            <Badge
-                              label={r.avg.toFixed(1)}
-                              variant={r.avg >= 4 ? 'success' : r.avg >= 3 ? 'warning' : 'error'}
-                            />
-                          ) : '—',
-                        },
-                        {
-                          key: 'count',
-                          header: 'Respostas',
-                          align: 'center' as const,
-                          render: (r: any) => r.count,
-                        },
-                      ]}
-                      rows={studentAvgs}
-                    />
-                  </ContentCard>
-                </Box>
-              )}
             </Box>
           )}
 

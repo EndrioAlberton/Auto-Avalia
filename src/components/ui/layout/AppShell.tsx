@@ -32,7 +32,7 @@ function roleLabel(role?: string): string {
     gestor: 'Gestor',
     secretaria: 'Secretaria',
     admin: 'Admin',
-    estudante: 'Estudante',
+
   };
   return role ? (labels[role] ?? role) : '';
 }

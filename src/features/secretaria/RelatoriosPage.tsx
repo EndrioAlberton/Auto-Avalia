@@ -4,23 +4,20 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import CircularProgress from '@mui/material/CircularProgress';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import PeopleIcon from '@mui/icons-material/People';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
-import { StatCard } from '../../components/ui/data-display/StatCard';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { DataTable } from '../../components/ui/data-display/DataTable';
 import { Badge } from '../../components/ui/primitives/Badge';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useSecretariaData } from './hooks/useSecretariaData';
 import { DOMAINS } from '../../data/questionnaireData';
-import { formatFirestoreDate, studentResponsesToAvgScores, studentOverallAvg } from '../../services/analyticsService';
+import { formatFirestoreDate } from '../../services/analyticsService';
 import { colors } from '../../components/ui/tokens';
-import Grid from '@mui/material/Grid2';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
-  const { loading, schoolsWithStats, teachersWithScores, allStudentResponses } = useSecretariaData();
+  const { loading, schoolsWithStats, teachersWithScores } = useSecretariaData();
 
   if (loading) {
     return (
@@ -52,7 +49,6 @@ export function RelatoriosPage() {
         <Tab label="Rede" />
         <Tab label="Por Escola" />
         <Tab label="Por Professor" />
-        <Tab label="Estudantes" />
       </Tabs>
 
       {/* ── Rede ── */}
@@ -216,104 +212,6 @@ export function RelatoriosPage() {
         </ContentCard>
       )}
 
-      {/* ── Estudantes ── */}
-      {tab === 3 && (() => {
-        const netStudentAvgs = studentResponsesToAvgScores(allStudentResponses);
-        const netStudentOverall = studentOverallAvg(netStudentAvgs);
-        const totalStudentResps = allStudentResponses.length;
-        const studentNetBarData = netStudentAvgs.map((q) => ({
-          domain: q.questionId,
-          label: `${q.emoji} ${q.questionId.toUpperCase()}`,
-          nota: q.avg,
-        }));
-        const studentNetTooltipMap = Object.fromEntries(
-          netStudentAvgs.map((q) => [`${q.emoji} ${q.questionId.toUpperCase()}`, `${q.emoji} ${q.text}`])
-        );
-
-        return totalStudentResps === 0 ? (
-          <EmptyState
-            icon={<PeopleIcon />}
-            title="Sem respostas de estudantes"
-            body="Os dados aparecerão quando estudantes responderem o questionário nas escolas da rede."
-          />
-        ) : (
-          <Box display="flex" flexDirection="column" gap={2}>
-            <Grid container spacing={2} alignItems="stretch">
-              <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
-                <StatCard label="Respostas na rede" value={totalStudentResps} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
-                <StatCard label="Média geral de satisfação" value={`${netStudentOverall}/5`} sub="de 1 a 5" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex' }}>
-                <StatCard label="Escolas com dados" value={schoolsWithStats.filter((s) => s.studentCount > 0).length} />
-              </Grid>
-            </Grid>
-
-            <ContentCard title="Média por questão — rede">
-              <DomainBarChart
-                data={studentNetBarData}
-                keys={['nota']}
-                keyLabels={{ nota: 'Média (1–5)' }}
-                tooltipLabelMap={studentNetTooltipMap}
-              />
-            </ContentCard>
-
-            <ContentCard title="Estudantes por escola" noPadding>
-              <DataTable
-                columns={[
-                  { key: 'name', header: 'Escola', render: (r: any) => r.name },
-                  {
-                    key: 'studentCount',
-                    header: 'Respostas',
-                    align: 'center' as const,
-                    render: (r: any) => r.studentCount,
-                  },
-                  {
-                    key: 'studentAvgOverall',
-                    header: 'Média Geral',
-                    align: 'center' as const,
-                    render: (r: any) =>
-                      r.studentCount > 0 ? (
-                        <Badge
-                          label={`${r.studentAvgOverall.toFixed(1)}/5`}
-                          variant={r.studentAvgOverall >= 4 ? 'success' : r.studentAvgOverall >= 3 ? 'warning' : 'error'}
-                        />
-                      ) : '—',
-                  },
-                ]}
-                rows={schoolsWithStats}
-              />
-            </ContentCard>
-
-            <ContentCard title="Detalhamento por questão — rede" noPadding>
-              <DataTable
-                columns={[
-                  { key: 'q', header: 'Questão', render: (r: any) => `${r.emoji} ${r.text}` },
-                  {
-                    key: 'avg',
-                    header: 'Média',
-                    align: 'center' as const,
-                    render: (r: any) => r.count > 0 ? (
-                      <Badge
-                        label={r.avg.toFixed(1)}
-                        variant={r.avg >= 4 ? 'success' : r.avg >= 3 ? 'warning' : 'error'}
-                      />
-                    ) : '—',
-                  },
-                  {
-                    key: 'count',
-                    header: 'Respostas',
-                    align: 'center' as const,
-                    render: (r: any) => r.count,
-                  },
-                ]}
-                rows={netStudentAvgs}
-              />
-            </ContentCard>
-          </Box>
-        );
-      })()}
     </Box>
   );
 }

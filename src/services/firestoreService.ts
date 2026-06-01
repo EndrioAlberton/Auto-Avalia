@@ -321,40 +321,6 @@ export const getNetworkResponses = async (networkId: string): Promise<Questionna
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// RESPOSTAS ANÔNIMAS (ESTUDANTES)
-// ══════════════════════════════════════════════════════════════════════════════
-
-export interface StudentResponseData {
-  questionnaireId: string;
-  schoolId: string;
-  networkId?: string;
-  answers: { questionId: string; value: number }[];
-  feedback?: string;
-  grade?: string;
-}
-
-export const saveStudentResponse = async (data: StudentResponseData): Promise<string> => {
-  const ref = doc(collection(db, 'anonymous_responses'));
-  await setDoc(ref, stripUndefined({
-    ...data,
-    anonymousId: ref.id,
-    completedAt: serverTimestamp(),
-  }));
-  return ref.id;
-};
-
-export const getStudentResponsesBySchool = async (
-  schoolId: string,
-): Promise<any[]> => {
-  const q = query(
-    collection(db, 'anonymous_responses'),
-    where('schoolId', '==', schoolId),
-    orderBy('completedAt', 'desc'),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONVITES

@@ -6,7 +6,6 @@ import {
   getTeachersBySchool,
   getSchoolResponses,
   getSchoolInvitations,
-  getStudentResponsesBySchool,
   getOrSeedQuestionnaire,
 } from '../../../services/firestoreService';
 import {
@@ -23,8 +22,6 @@ export interface GestorData {
   schoolResponses: any[];
   schoolScores: DomainScore[] | null;
   responseRate: number;
-  studentsCount: number;
-  studentResponses: any[];
   questionnaire: Questionnaire | null;
   loading: boolean;
   error: string;
@@ -38,8 +35,6 @@ export function useGestorData(): GestorData {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [schoolResponses, setSchoolResponses] = useState<any[]>([]);
   const [schoolScores, setSchoolScores] = useState<DomainScore[] | null>(null);
-  const [studentsCount, setStudentsCount] = useState(0);
-  const [studentResponses, setStudentResponses] = useState<any[]>([]);
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -62,12 +57,11 @@ export function useGestorData(): GestorData {
           return;
         }
 
-        const [sc, t, invites, resp, studResp, q] = await Promise.all([
+        const [sc, t, invites, resp, q] = await Promise.all([
           getSchool(schoolId),
           getTeachersBySchool(schoolId),
           getSchoolInvitations(schoolId),
           getSchoolResponses(schoolId),
-          getStudentResponsesBySchool(schoolId),
           getOrSeedQuestionnaire(UserRole.PROFESSOR),
         ]);
 
@@ -78,8 +72,6 @@ export function useGestorData(): GestorData {
         setInvitations(invites.filter((i) => i.status === 'pending'));
         setSchoolResponses(resp);
         setSchoolScores(responsesToAvgScores(resp));
-        setStudentsCount(studResp.length);
-        setStudentResponses(studResp);
         setQuestionnaire(q);
       } catch (e: unknown) {
         if (!cancelled) setError((e as Error)?.message ?? 'Erro ao carregar dados');
@@ -105,8 +97,6 @@ export function useGestorData(): GestorData {
     schoolResponses,
     schoolScores,
     responseRate,
-    studentsCount,
-    studentResponses,
     questionnaire,
     loading,
     error,

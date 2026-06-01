@@ -13,11 +13,6 @@ import { colors } from './components/ui/tokens';
 const LoginPage    = lazy(() => import('./features/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 
-// Estudante (Phase 8)
-const EstudanteSchoolSelect = lazy(() => import('./features/questionnaire/student/SchoolSelectPage').then((m) => ({ default: m.SchoolSelectPage })));
-const EstudanteQuiz         = lazy(() => import('./features/questionnaire/student/QuizPage').then((m) => ({ default: m.QuizPage })));
-const EstudanteCompletion   = lazy(() => import('./features/questionnaire/student/CompletionPage').then((m) => ({ default: m.CompletionPage })));
-
 // Professor pages (Phase 5)
 const ProfessorInicioPage      = lazy(() => import('./features/professor/InicioPage').then((m) => ({ default: m.InicioPage })));
 const ProfessorQuestionarioPage = lazy(() => import('./features/professor/QuestionarioPage').then((m) => ({ default: m.QuestionarioPage })));
@@ -55,12 +50,6 @@ const App: React.FC = () => {
         {/* Public */}
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
-        {/* Estudante (sem sidebar) */}
-        <Route path="/estudante"          element={<Navigate to="/estudante/escola" replace />} />
-        <Route path="/estudante/escola"   element={<EstudanteSchoolSelect />} />
-        <Route path="/estudante/quiz"     element={<EstudanteQuiz />} />
-        <Route path="/estudante/concluido" element={<EstudanteCompletion />} />
 
         {/* Professor */}
         <Route

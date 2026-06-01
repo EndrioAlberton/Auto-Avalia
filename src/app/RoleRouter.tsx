@@ -7,7 +7,7 @@ const roleHomePaths: Record<UserRole, string> = {
   [UserRole.GESTOR]:     '/app/gestor/inicio',
   [UserRole.SECRETARIA]: '/app/secretaria/inicio',
   [UserRole.ADMIN]:      '/app/secretaria/inicio',
-  [UserRole.ESTUDANTE]:  '/estudante/escola',
+
 };
 
 export function RoleRouter() {

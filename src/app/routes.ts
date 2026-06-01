@@ -5,5 +5,5 @@ export const roleHomePaths: Record<string, string> = {
   [UserRole.GESTOR]:     '/app/gestor/inicio',
   [UserRole.SECRETARIA]: '/app/secretaria/inicio',
   [UserRole.ADMIN]:      '/app/secretaria/inicio',
-  [UserRole.ESTUDANTE]:  '/estudante/escola',
+
 };

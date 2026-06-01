@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { School, User, QuestionnaireResponse } from '../../../types';
-import { getAllSchools, getAllUsers, getSchoolResponses, getTeachersBySchool, getStudentResponsesBySchool } from '../../../services/firestoreService';
+import { getAllSchools, getAllUsers, getSchoolResponses, getTeachersBySchool } from '../../../services/firestoreService';
 import {
   responsesToAvgScores,
   answersToScores,
   overallScore,
   DomainScore,
-  studentResponsesToAvgScores,
-  studentOverallAvg,
-  StudentQuestionAvg,
 } from '../../../services/analyticsService';
 
 export interface SchoolWithStats extends School {
@@ -18,9 +15,6 @@ export interface SchoolWithStats extends School {
   respondedCount: number;
   teachersCount: number;
   avgScores: DomainScore[];
-  studentCount: number;
-  studentAvgOverall: number;
-  studentAvgs: StudentQuestionAvg[];
 }
 
 export interface TeacherWithScore extends User {
@@ -36,7 +30,6 @@ export interface SecretariaData {
   allUsers: User[];
   schoolsWithStats: SchoolWithStats[];
   teachersWithScores: TeacherWithScore[];
-  allStudentResponses: any[];
   loading: boolean;
   error: string;
   refreshData: () => void;
@@ -48,7 +41,6 @@ export function useSecretariaData(): SecretariaData {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [schoolsWithStats, setSchoolsWithStats] = useState<SchoolWithStats[]>([]);
   const [teachersWithScores, setTeachersWithScores] = useState<TeacherWithScore[]>([]);
-  const [allStudentResponses, setAllStudentResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tick, setTick] = useState(0);
@@ -75,22 +67,21 @@ export function useSecretariaData(): SecretariaData {
         setSchools(schoolList);
         setAllUsers(users);
 
-        // Carrega respostas, professores e estudantes de cada escola em paralelo
+        // Carrega respostas e professores de cada escola em paralelo
         const schoolDataList = await Promise.all(
           schoolList.map(async (school) => {
-            const [responses, teachers, studentResps] = await Promise.all([
+            const [responses, teachers] = await Promise.all([
               getSchoolResponses(school.id),
               getTeachersBySchool(school.id),
-              getStudentResponsesBySchool(school.id),
             ]);
-            return { school, responses, teachers, studentResps };
+            return { school, responses, teachers };
           }),
         );
 
         if (cancelled) return;
 
         // Agrega stats por escola
-        const stats: SchoolWithStats[] = schoolDataList.map(({ school, responses, teachers, studentResps }) => {
+        const stats: SchoolWithStats[] = schoolDataList.map(({ school, responses, teachers }) => {
           const respondedUids = new Set(responses.map((r) => r.userId));
           const responseRate =
             teachers.length > 0
@@ -102,7 +93,6 @@ export function useSecretariaData(): SecretariaData {
             validScores.length > 0
               ? parseFloat((validScores.reduce((s, d) => s + d.score, 0) / validScores.length).toFixed(1))
               : 0;
-          const studentAvgs = studentResponsesToAvgScores(studentResps);
           return {
             ...school,
             responseRate,
@@ -110,9 +100,6 @@ export function useSecretariaData(): SecretariaData {
             respondedCount: new Set(responses.map((r) => r.userId)).size,
             teachersCount: teachers.length,
             avgScores,
-            studentCount: studentResps.length,
-            studentAvgOverall: studentOverallAvg(studentAvgs),
-            studentAvgs,
           };
         });
 
@@ -156,7 +143,6 @@ export function useSecretariaData(): SecretariaData {
         if (!cancelled) {
           setSchoolsWithStats(stats);
           setTeachersWithScores(teacherRows);
-          setAllStudentResponses(schoolDataList.flatMap((d) => d.studentResps));
         }
       } catch (e: unknown) {
         if (!cancelled) setError((e as Error)?.message ?? 'Erro ao carregar dados');
@@ -173,7 +159,6 @@ export function useSecretariaData(): SecretariaData {
     allUsers,
     schoolsWithStats,
     teachersWithScores,
-    allStudentResponses,
     loading,
     error,
     refreshData,
