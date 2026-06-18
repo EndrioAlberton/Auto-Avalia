@@ -22,13 +22,13 @@ export default defineConfig({
     viewportHeight: 600,
   },
   env: {
-    // Preencher em cypress.env.json (não versionar)
-    FIREBASE_API_KEY: '',
-    TEST_PROFESSOR_EMAIL: 'professor@autoavalia.test',
-    TEST_PROFESSOR_PASSWORD: 'Teste@123',
-    TEST_GESTOR_EMAIL: 'gestor@autoavalia.test',
-    TEST_GESTOR_PASSWORD: 'Teste@123',
-    TEST_SECRETARIA_EMAIL: 'secretaria@autoavalia.test',
-    TEST_SECRETARIA_PASSWORD: 'Teste@123',
+    // Credenciais definidas em cypress.env.json (não versionado).
+    // Execute `npm run seed` antes para garantir que os usuários existam.
+    TEST_PROFESSOR_EMAIL: '',
+    TEST_PROFESSOR_PASSWORD: '',
+    TEST_GESTOR_EMAIL: '',
+    TEST_GESTOR_PASSWORD: '',
+    TEST_SECRETARIA_EMAIL: '',
+    TEST_SECRETARIA_PASSWORD: '',
   },
 });
