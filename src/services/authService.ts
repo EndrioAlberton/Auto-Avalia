@@ -9,7 +9,8 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
-import { User, UserRole } from '../types';
+import type { User} from '../types';
+import { UserRole } from '../types';
 
 const googleProvider = new GoogleAuthProvider();
 

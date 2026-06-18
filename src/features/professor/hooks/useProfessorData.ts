@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { UserRole, Questionnaire, QuestionnaireResponse, Invitation } from '../../../types';
+import type { Questionnaire, QuestionnaireResponse, Invitation } from '../../../types';
+import { UserRole } from '../../../types';
 import {
   getOrSeedQuestionnaire,
   getUserResponses,
@@ -8,15 +9,16 @@ import {
   getPendingInvitationsByEmail,
   getSchool,
 } from '../../../services/firestoreService';
+import type {
+  DomainScore,
+  EvolutionPoint} from '../../../services/analyticsService';
 import {
   answersToScores,
   responsesToAvgScores,
   buildEvolutionData,
   getStrengths,
   getImprovements,
-  overallScore,
-  DomainScore,
-  EvolutionPoint,
+  overallScore
 } from '../../../services/analyticsService';
 
 export interface ProfessorData {

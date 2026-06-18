@@ -13,13 +13,15 @@ import AddIcon from '@mui/icons-material/Add';
 import SchoolIcon from '@mui/icons-material/School';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
-import { DataTable, Column } from '../../components/ui/data-display/DataTable';
+import type { Column } from '../../components/ui/data-display/DataTable';
+import { DataTable } from '../../components/ui/data-display/DataTable';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
-import { SchoolForm, SchoolFormValues } from '../school/SchoolForm';
+import type { SchoolFormValues } from '../school/SchoolForm';
+import { SchoolForm } from '../school/SchoolForm';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { createSchool, updateSchool, deleteSchool } from '../../services/firestoreService';
 import { useSecretariaData } from './hooks/useSecretariaData';
-import { School } from '../../types';
+import type { School } from '../../types';
 import { colors } from '../../components/ui/tokens';
 
 const EMPTY: SchoolFormValues = { name: '', state: '', city: '', address: '', phone: '', email: '' };

@@ -5,7 +5,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import { School } from '../../types';
+import type { School } from '../../types';
 
 const ESTADOS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',

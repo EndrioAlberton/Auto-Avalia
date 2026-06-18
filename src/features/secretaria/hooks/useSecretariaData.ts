@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { School, User, QuestionnaireResponse } from '../../../types';
+import type { School, User, QuestionnaireResponse } from '../../../types';
 import { getAllSchools, getAllUsers, getSchoolResponses, getTeachersBySchool } from '../../../services/firestoreService';
+import type {
+  DomainScore} from '../../../services/analyticsService';
 import {
   responsesToAvgScores,
   answersToScores,
-  overallScore,
-  DomainScore,
+  overallScore
 } from '../../../services/analyticsService';
 
 export interface SchoolWithStats extends School {

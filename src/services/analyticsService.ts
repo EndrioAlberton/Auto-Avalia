@@ -1,7 +1,7 @@
 // ── SERVIÇO DE ANÁLISE E CÁLCULO DE PONTUAÇÕES ───────────────────────────────
 // Converte respostas brutas do Firestore em dados de relatório
 
-import { QuestionnaireResponse } from '../types';
+import type { QuestionnaireResponse } from '../types';
 import { DOMAIN_QUESTION_IDS, DOMAINS } from '../data/questionnaireData';
 
 // ── INTERFACES ────────────────────────────────────────────────────────────────

@@ -14,15 +14,16 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import {
+import type {
   School,
   Questionnaire,
   QuestionnaireResponse,
   Report,
   Invitation,
   SupportMaterial,
-  UserRole,
-  User,
+  User} from '../types';
+import {
+  UserRole
 } from '../types';
 import { PROFESSOR_QUESTIONS, DEFAULT_SUPPORT_MATERIALS } from '../data/questionnaireData';
 

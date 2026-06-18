@@ -6,7 +6,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import SchoolIcon from '@mui/icons-material/School';
 import DomainIcon from '@mui/icons-material/Domain';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import { NavConfig } from './nav.types';
+import type { NavConfig } from './nav.types';
 
 export const professorNavConfig: NavConfig = {
   sections: [

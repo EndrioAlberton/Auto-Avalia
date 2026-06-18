@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { School, User, Invitation, Questionnaire } from '../../../types';
+import type { School, User, Invitation, Questionnaire } from '../../../types';
 import {
   getSchool,
   getTeachersBySchool,
@@ -8,9 +8,10 @@ import {
   getSchoolInvitations,
   getOrSeedQuestionnaire,
 } from '../../../services/firestoreService';
+import type {
+  DomainScore} from '../../../services/analyticsService';
 import {
-  responsesToAvgScores,
-  DomainScore,
+  responsesToAvgScores
 } from '../../../services/analyticsService';
 import { UserRole } from '../../../types';
 

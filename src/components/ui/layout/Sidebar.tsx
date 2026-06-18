@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { NavConfig } from './nav.types';
+import type { NavConfig } from './nav.types';
 import { colors, radius, motion } from '../tokens';
 import { initials } from '../../../utils/userUtils';
 

@@ -9,7 +9,7 @@ import Avatar from '@mui/material/Avatar';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
-import { NavConfig } from './nav.types';
+import type { NavConfig } from './nav.types';
 import { Sidebar } from './Sidebar';
 import { colors, motion } from '../tokens';
 import { useAuth } from '../../../contexts/AuthContext';

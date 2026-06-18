@@ -16,7 +16,8 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { StatCard } from '../../components/ui/data-display/StatCard';
-import { DataTable, Column } from '../../components/ui/data-display/DataTable';
+import type { Column } from '../../components/ui/data-display/DataTable';
+import { DataTable } from '../../components/ui/data-display/DataTable';
 import { Badge } from '../../components/ui/primitives/Badge';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
@@ -24,7 +25,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { createInvitation } from '../../services/firestoreService';
 import { formatFirestoreDate } from '../../services/analyticsService';
 import { useGestorData } from './hooks/useGestorData';
-import { User } from '../../types';
+import type { User } from '../../types';
 import { colors } from '../../components/ui/tokens';
 
 interface TeacherRow extends User {
@@ -56,7 +57,7 @@ export function EquipePage() {
     role: 'professor' as any,
     createdAt: inv.createdAt,
     updatedAt: inv.createdAt,
-    statusLabel: 'Convidado' as 'Convidado',
+    statusLabel: 'Convidado' as const,
   }));
 
   const allRows = [...teacherRows, ...inviteRows];

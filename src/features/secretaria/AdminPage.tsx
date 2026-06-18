@@ -6,11 +6,13 @@ import SearchIcon from '@mui/icons-material/Search';
 import PeopleIcon from '@mui/icons-material/People';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
-import { DataTable, Column } from '../../components/ui/data-display/DataTable';
+import type { Column } from '../../components/ui/data-display/DataTable';
+import { DataTable } from '../../components/ui/data-display/DataTable';
 import { Badge } from '../../components/ui/primitives/Badge';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { useSecretariaData } from './hooks/useSecretariaData';
-import { User, UserRole } from '../../types';
+import type { User} from '../../types';
+import { UserRole } from '../../types';
 import { colors, radius } from '../../components/ui/tokens';
 import Typography from '@mui/material/Typography';
 
