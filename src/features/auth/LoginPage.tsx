@@ -114,6 +114,7 @@ export function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              inputProps={{ 'data-testid': 'email-input' }}
             />
             <TextField
               fullWidth
@@ -123,6 +124,7 @@ export function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
+              inputProps={{ 'data-testid': 'password-input' }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -141,6 +143,7 @@ export function LoginPage() {
             variant="contained"
             size="large"
             disabled={loading}
+            data-testid="login-submit"
             sx={{ mb: 2 }}
           >
             {loading ? <CircularProgress size={20} color="inherit" /> : 'Entrar'}

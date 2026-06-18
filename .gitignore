@@ -66,6 +66,10 @@ dist
 
 # Testing
 coverage
+cypress/videos
+cypress/screenshots
+cypress.env.json
+cypress.env
 
 # Misc
 .DS_Store

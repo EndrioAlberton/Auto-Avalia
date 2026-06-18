@@ -1,0 +1,25 @@
+{
+  "professor": {
+    "uid": "professor-test-uid-001",
+    "email": "professor@autoavalia.test",
+    "displayName": "Ana Silva",
+    "role": "professor",
+    "schoolId": "school-test-001",
+    "networkId": "network-test-001"
+  },
+  "gestor": {
+    "uid": "gestor-test-uid-001",
+    "email": "gestor@autoavalia.test",
+    "displayName": "Carlos Gestor",
+    "role": "gestor",
+    "schoolId": "school-test-001",
+    "networkId": "network-test-001"
+  },
+  "secretaria": {
+    "uid": "secretaria-test-uid-001",
+    "email": "secretaria@autoavalia.test",
+    "displayName": "Maria Secretaria",
+    "role": "secretaria",
+    "networkId": "network-test-001"
+  }
+}

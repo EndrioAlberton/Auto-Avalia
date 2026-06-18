@@ -1,0 +1,10 @@
+{
+  "id": "school-test-001",
+  "name": "Escola Municipal Teste",
+  "city": "Porto Alegre",
+  "state": "RS",
+  "networkId": "network-test-001",
+  "segments": ["anos_iniciais", "anos_finais"],
+  "address": "Rua dos Testes, 100",
+  "phone": "(51) 1234-5678"
+}
