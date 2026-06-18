@@ -17,19 +17,22 @@ import type { QuestionnaireResponse } from '../types';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeResponse(
-  answers: Record<string, number>,
+  rawAnswers: Record<string, number>,
   overrides: Partial<QuestionnaireResponse> = {},
 ): QuestionnaireResponse {
   return {
-    id: 'r1',
-    questionnaireId: 'q1',
-    userId: 'u1',
-    schoolId: 's1',
-    completedAt: new Date('2024-03-15'),
-    answers: Object.entries(answers).map(([questionId, value]) => ({ questionId, value })),
+    id: 'test-id',
+    questionnaireId: 'q-default',
+    userId: 'user-default',
+    schoolId: 'school-default',
+    answers: Object.entries(rawAnswers).map(([questionId, value]) => ({ questionId, value })),
+    completedAt: new Date(),
     ...overrides,
   };
 }
+
+
+
 
 // ── answersToScores ───────────────────────────────────────────────────────────
 
