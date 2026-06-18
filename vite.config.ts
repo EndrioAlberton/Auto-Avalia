@@ -7,13 +7,4 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
-  test: {
-    globals: true,
-    environment: 'node',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    coverage: {
-      reporter: ['text', 'html'],
-      include: ['src/utils/**', 'src/services/**'],
-    },
-  },
 })
