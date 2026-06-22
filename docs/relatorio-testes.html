@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Relatório de Testes e Análise Estática — SELF Plataforma Educacional</title>
+<style>
+  /* ── Reset & Fontes ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #1a1a2e;
+    background: #fff;
+  }
+
+  /* ── Página ── */
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+
+  .page-break { page-break-before: always; break-before: page; }
+
+  /* ── Capa ── */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 60px 50px;
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 60%, #1a1a2e 100%);
+    color: #fff;
+    page-break-after: always;
+    break-after: page;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: #e94560;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+  }
+  .cover h1 {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    max-width: 560px;
+  }
+  .cover h1 span { color: #e94560; }
+  .cover p.subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    max-width: 480px;
+    margin-bottom: 48px;
+  }
+  .cover-meta { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 28px; width: 100%; }
+  .cover-meta table { border-collapse: collapse; }
+  .cover-meta td { padding: 5px 20px 5px 0; font-size: 12px; color: rgba(255,255,255,0.8); }
+  .cover-meta td:first-child { color: rgba(255,255,255,0.45); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ── Índice ── */
+  .toc { padding: 48px 0 32px; page-break-after: always; break-after: page; }
+  .toc h2 { font-size: 22px; font-weight: 800; color: #0f3460; margin-bottom: 24px; padding-bottom: 10px; border-bottom: 3px solid #e94560; }
+  .toc ol { padding-left: 20px; }
+  .toc li { padding: 6px 0; font-size: 13px; color: #333; }
+  .toc li a { color: #0f3460; text-decoration: none; font-weight: 500; }
+  .toc li .toc-sub { display: block; padding-left: 18px; font-size: 12px; color: #666; font-weight: 400; }
+
+  /* ── Seções ── */
+  section { padding: 36px 0; }
+  section + section { border-top: 1px solid #eee; }
+
+  h2.section-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f3460;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2.section-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    background: #e94560;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  h3.sub-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #16213e;
+    margin: 24px 0 10px;
+    padding-left: 12px;
+    border-left: 3px solid #e94560;
+  }
+  h4.fn-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f3460;
+    margin: 18px 0 6px;
+  }
+
+  p { margin-bottom: 10px; }
+  p + p { margin-top: 0; }
+
+  /* ── Path ── */
+  .file-path {
+    display: inline-block;
+    background: #f0f4ff;
+    border: 1px solid #c5d3f0;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11.5px;
+    color: #0f3460;
+    margin-bottom: 12px;
+    word-break: break-all;
+  }
+
+  /* ── Código ── */
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 10px 0 18px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  pre .cm  { color: #94a3b8; } /* comentário */
+  pre .kw  { color: #f472b6; } /* keyword */
+  pre .fn  { color: #60a5fa; } /* função */
+  pre .st  { color: #86efac; } /* string */
+  pre .nm  { color: #fbbf24; } /* número */
+  pre .tp  { color: #a78bfa; } /* tipo */
+  pre .op  { color: #67e8f9; } /* operador/parêntesis */
+
+  /* ── Callouts ── */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: 12.5px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .callout.info { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+  .callout.warn { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+  .callout.ok   { background: #f0fdf4; border-left: 4px solid #22c55e; color: #14532d; }
+  .callout.fix  { background: #fdf4ff; border-left: 4px solid #a855f7; color: #581c87; }
+  .callout strong { font-weight: 700; }
+
+  /* ── Tabela ── */
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 14px 0 20px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  table.data th {
+    background: #0f3460;
+    color: #fff;
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  table.data td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  table.data tr:nth-child(even) td { background: #f8faff; }
+  table.data td code {
+    background: #f1f5f9;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+    color: #0f3460;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge.pass { background: #dcfce7; color: #166534; }
+  .badge.warn { background: #fef9c3; color: #713f12; }
+  .badge.error { background: #fee2e2; color: #991b1b; }
+  .badge.fixed { background: #f3e8ff; color: #581c87; }
+
+  /* ── Rodapé ── */
+  footer {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+    margin-top: 40px;
+    font-size: 11px;
+    color: #9ca3af;
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ CAPA ══ -->
+<div class="cover">
+  <span class="cover-badge">Documentação Técnica</span>
+  <h1>Relatório de <span>Testes</span> e Análise Estática</h1>
+  <p class="subtitle">
+    Documentação completa dos testes unitários adicionados ao projeto SELF —
+    Sistema Educacional de Learning e Formação, incluindo configuração de
+    linter e análise estática de código.
+  </p>
+  <div class="cover-meta">
+    <table>
+      <tr><td>Projeto</td><td>self-plataforma-educacional</td></tr>
+      <tr><td>Framework de Testes</td><td>Vitest v4.1.9</td></tr>
+      <tr><td>Análise Estática</td><td>ESLint v8.57.1 + @typescript-eslint v7.13.1</td></tr>
+      <tr><td>TypeScript</td><td>v5.2.2 — modo strict</td></tr>
+      <tr><td>Data</td><td>18 de junho de 2026</td></tr>
+      <tr><td>Testes Unitários (Vitest)</td><td>33 testes · 2 arquivos · 10 suítes</td></tr>
+      <tr><td>Testes E2E (Cypress)</td><td>78 testes · 4 arquivos · 4 perfis</td></tr>
+      <tr><td>Testes de Componente (Cypress)</td><td>33 testes · 4 componentes</td></tr>
+      <tr><td><strong>Total Geral</strong></td><td><strong>144 testes</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ ÍNDICE ══ -->
+<div class="toc">
+  <h2>Índice</h2>
+  <ol>
+    <li>
+      <a href="#infra">Infraestrutura de Testes</a>
+      <span class="toc-sub">vitest.config.ts · scripts npm · estrutura de arquivos</span>
+    </li>
+    <li>
+      <a href="#userutils">Testes Unitários — userUtils</a>
+      <span class="toc-sub">src/utils/userUtils.test.ts · 6 testes · suíte: initials</span>
+    </li>
+    <li>
+      <a href="#analytics">Testes Unitários — analyticsService</a>
+      <span class="toc-sub">src/services/analyticsService.test.ts · 27 testes · 9 suítes</span>
+      <span class="toc-sub">helper makeResponse · answersToScores · overallScore · getStrengths</span>
+      <span class="toc-sub">getImprovements · responsesToAvgScores · buildEvolutionData</span>
+      <span class="toc-sub">buildComparisonData · formatFirestoreDate · classifyTeacherResponseStatus · groupBySegment</span>
+    </li>
+    <li>
+      <a href="#fix">Correção Aplicada — makeResponse</a>
+      <span class="toc-sub">bug ReferenceError · causa · solução</span>
+    </li>
+    <li>
+      <a href="#eslint">Análise Estática — ESLint</a>
+      <span class="toc-sub">.eslintrc.cjs · regras configuradas · resultado da varredura</span>
+    </li>
+    <li>
+      <a href="#summary">Resumo Geral — Vitest</a>
+      <span class="toc-sub">tabela de todos os testes unitários · métricas</span>
+    </li>
+    <li>
+      <a href="#cypress-config">Cypress — Configuração e Infraestrutura</a>
+      <span class="toc-sub">cypress.config.cts · comandos customizados · scripts npm</span>
+    </li>
+    <li>
+      <a href="#cypress-e2e">Cypress E2E — Testes de Ponta a Ponta</a>
+      <span class="toc-sub">01-auth (15 testes) · 02-professor (17 testes) · 03-gestor (20 testes) · 04-secretaria (26 testes)</span>
+    </li>
+    <li>
+      <a href="#cypress-component">Cypress Component — Testes de Componentes React</a>
+      <span class="toc-sub">Badge · DataTable · ProgressBar · StatCard · 33 testes</span>
+    </li>
+    <li>
+      <a href="#summary-total">Resumo Total</a>
+      <span class="toc-sub">144 testes · todas as camadas · métricas finais</span>
+    </li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════ 1. INFRA ══ -->
+<section id="infra">
+  <h2 class="section-title"><span class="num">1</span> Infraestrutura de Testes</h2>
+
+  <p>
+    O projeto utiliza o <strong>Vitest</strong> como framework de testes unitários —
+    uma ferramenta nativa do ecossistema Vite, compatível com a API do Jest,
+    que executa os testes diretamente no ambiente de módulos ES sem transpilação extra.
+  </p>
+
+  <h3 class="sub-title">1.1 Arquivo de Configuração</h3>
+  <span class="file-path">vitest.config.ts</span>
+  <pre><span class="kw">import</span> { defineConfig } <span class="kw">from</span> <span class="st">'vitest/config'</span>
+<span class="kw">import</span> react <span class="kw">from</span> <span class="st">'@vitejs/plugin-react'</span>
+
+<span class="kw">export default</span> defineConfig({
+  plugins: [react()],
+  test: {
+    globals: <span class="kw">true</span>,          <span class="cm">// describe/it/expect disponíveis sem import</span>
+    environment: <span class="st">'node'</span>,    <span class="cm">// ambiente Node.js (sem DOM)</span>
+    include: [<span class="st">'src/**/*.test.ts'</span>, <span class="st">'src/**/*.test.tsx'</span>],
+    coverage: {
+      reporter: [<span class="st">'text'</span>, <span class="st">'html'</span>],
+      include: [<span class="st">'src/utils/**'</span>, <span class="st">'src/services/**'</span>],
+    },
+  },
+})</pre>
+
+  <div class="callout info">
+    <strong>Por que environment: 'node'?</strong> Os testes cobrem funções puras de cálculo e transformação de dados.
+    Não há renderização de componentes React, então o ambiente Node é suficiente e mais rápido que jsdom.
+  </div>
+
+  <h3 class="sub-title">1.2 Scripts npm Disponíveis</h3>
+  <span class="file-path">package.json</span>
+  <pre><span class="st">"scripts"</span>: {
+  <span class="st">"test"</span>:          <span class="st">"vitest run"</span>,           <span class="cm">// executa uma vez e sai</span>
+  <span class="st">"test:watch"</span>:    <span class="st">"vitest"</span>,               <span class="cm">// modo watch (reexecuta ao salvar)</span>
+  <span class="st">"test:coverage"</span>: <span class="st">"vitest run --coverage"</span>, <span class="cm">// relatório de cobertura HTML</span>
+  <span class="st">"lint"</span>:          <span class="st">"eslint \"src/**/*.ts\" \"src/**/*.tsx\" --report-unused-disable-directives --max-warnings 0"</span>,
+  <span class="st">"lint:fix"</span>:      <span class="st">"eslint \"src/**/*.ts\" \"src/**/*.tsx\" --fix"</span>
+}</pre>
+
+  <h3 class="sub-title">1.3 Estrutura dos Arquivos de Teste</h3>
+  <pre><span class="cm">src/
+├── utils/
+│   ├── userUtils.ts             ← código testado
+│   └── userUtils.test.ts        ← testes (6 casos)
+└── services/
+    ├── analyticsService.ts      ← código testado
+    └── analyticsService.test.ts ← testes (27 casos)</span></pre>
+
+  <div class="callout ok">
+    <strong>Convenção adotada:</strong> cada arquivo de teste fica junto ao arquivo que testa,
+    com sufixo <code>.test.ts</code>. Isso facilita navegação e garante que o teste seja
+    atualizado junto com o código.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ 2. USERUTILS ══ -->
+<div class="page-break"></div>
+<section id="userutils">
+  <h2 class="section-title"><span class="num">2</span> Testes Unitários — userUtils</h2>
+
+  <span class="file-path">src/utils/userUtils.ts</span>
+  <p>Contém a função <code>initials</code>, responsável por extrair as iniciais do nome de um usuário para exibição em avatares.</p>
+
+  <h3 class="sub-title">2.1 Código-Fonte da Função</h3>
+  <span class="file-path">src/utils/userUtils.ts</span>
+  <pre><span class="kw">export function</span> <span class="fn">initials</span>(name: <span class="tp">string</span>): <span class="tp">string</span> {
+  <span class="kw">return</span> name
+    .<span class="fn">split</span>(<span class="st">' '</span>)
+    .<span class="fn">filter</span>(Boolean)       <span class="cm">// remove tokens vazios (espaços extras)</span>
+    .<span class="fn">slice</span>(<span class="nm">0</span>, <span class="nm">2</span>)           <span class="cm">// usa apenas as 2 primeiras palavras</span>
+    .<span class="fn">map</span>((w) =&gt; w[<span class="nm">0</span>].<span class="fn">toUpperCase</span>())
+    .<span class="fn">join</span>(<span class="st">''</span>);
+}</pre>
+
+  <h3 class="sub-title">2.2 Arquivo de Testes Completo</h3>
+  <span class="file-path">src/utils/userUtils.test.ts</span>
+  <pre><span class="kw">import</span> { describe, it, expect } <span class="kw">from</span> <span class="st">'vitest'</span>;
+<span class="kw">import</span> { initials } <span class="kw">from</span> <span class="st">'./userUtils'</span>;
+
+describe(<span class="st">'initials'</span>, () =&gt; {
+  it(<span class="st">'retorna as iniciais de nome e sobrenome'</span>, () =&gt; {
+    expect(<span class="fn">initials</span>(<span class="st">'João Silva'</span>)).<span class="fn">toBe</span>(<span class="st">'JS'</span>);
+  });
+
+  it(<span class="st">'retorna apenas a inicial quando há um único nome'</span>, () =&gt; {
+    expect(<span class="fn">initials</span>(<span class="st">'Ana'</span>)).<span class="fn">toBe</span>(<span class="st">'A'</span>);
+  });
+
+  it(<span class="st">'usa apenas as duas primeiras palavras mesmo com nome composto'</span>, () =&gt; {
+    expect(<span class="fn">initials</span>(<span class="st">'João Carlos Silva'</span>)).<span class="fn">toBe</span>(<span class="st">'JC'</span>);
+  });
+
+  it(<span class="st">'converte para maiúsculas'</span>, () =&gt; {
+    expect(<span class="fn">initials</span>(<span class="st">'ana souza'</span>)).<span class="fn">toBe</span>(<span class="st">'AS'</span>);
+  });
+
+  it(<span class="st">'ignora espaços extras'</span>, () =&gt; {
+    expect(<span class="fn">initials</span>(<span class="st">'  Maria  José  '</span>)).<span class="fn">toBe</span>(<span class="st">'MJ'</span>);
+  });
+
+  it(<span class="st">'retorna string vazia para entrada vazia'</span>, () =&gt; {
+    expect(<span class="fn">initials</span>(<span class="st">''</span>)).<span class="fn">toBe</span>(<span class="st">''</span>);
+  });
+});</pre>
+
+  <h3 class="sub-title">2.3 Tabela de Casos de Teste</h3>
+  <table class="data">
+    <tr>
+      <th>#</th><th>Descrição</th><th>Entrada</th><th>Saída Esperada</th><th>Status</th>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Iniciais de nome e sobrenome</td>
+      <td><code>'João Silva'</code></td>
+      <td><code>'JS'</code></td>
+      <td><span class="badge pass">PASS</span></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Apenas um nome</td>
+      <td><code>'Ana'</code></td>
+      <td><code>'A'</code></td>
+      <td><span class="badge pass">PASS</span></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Nome composto (limita a 2 palavras)</td>
+      <td><code>'João Carlos Silva'</code></td>
+      <td><code>'JC'</code></td>
+      <td><span class="badge pass">PASS</span></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Converte para maiúsculas</td>
+      <td><code>'ana souza'</code></td>
+      <td><code>'AS'</code></td>
+      <td><span class="badge pass">PASS</span></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Espaços extras no início/meio/fim</td>
+      <td><code>'  Maria  José  '</code></td>
+      <td><code>'MJ'</code></td>
+      <td><span class="badge pass">PASS</span></td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>String vazia (edge case)</td>
+      <td><code>''</code></td>
+      <td><code>''</code></td>
+      <td><span class="badge pass">PASS</span></td>
+    </tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════════ 3. ANALYTICS ══ -->
+<div class="page-break"></div>
+<section id="analytics">
+  <h2 class="section-title"><span class="num">3</span> Testes Unitários — analyticsService</h2>
+
+  <p>
+    O <code>analyticsService.ts</code> é o núcleo de cálculo da plataforma.
+    Ele converte respostas brutas do Firestore em pontuações por domínio TPACK,
+    séries temporais de evolução, dados comparativos e classificações de status.
+    São <strong>27 testes em 9 suítes</strong>, todos isolados do Firebase.
+  </p>
+
+  <h3 class="sub-title">3.1 Helper de Fábrica — makeResponse</h3>
+  <p>
+    Todos os testes que precisam de um <code>QuestionnaireResponse</code> usam o helper
+    <code>makeResponse</code>, definido no topo do arquivo de teste.
+    Ele aceita um mapa plano de respostas <code>Record&lt;string, number&gt;</code>
+    e o converte para o formato <code>Answer[]</code> que o serviço espera.
+  </p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 19–32</span>
+  <pre><span class="kw">function</span> <span class="fn">makeResponse</span>(
+  rawAnswers: Record&lt;<span class="tp">string</span>, <span class="tp">number</span>&gt;,
+  overrides: Partial&lt;<span class="tp">QuestionnaireResponse</span>&gt; = {},
+): <span class="tp">QuestionnaireResponse</span> {
+  <span class="kw">return</span> {
+    id: <span class="st">'test-id'</span>,
+    questionnaireId: <span class="st">'q-default'</span>,
+    userId: <span class="st">'user-default'</span>,
+    schoolId: <span class="st">'school-default'</span>,
+    answers: Object.<span class="fn">entries</span>(rawAnswers).<span class="fn">map</span>(([questionId, value]) =&gt; ({ questionId, value })),
+    completedAt: <span class="kw">new</span> <span class="fn">Date</span>(),
+    ...overrides,
+  };
+}</pre>
+
+  <div class="callout info">
+    <strong>Por que este helper existe?</strong> <code>QuestionnaireResponse</code> requer vários campos
+    obrigatórios. Sem o helper, cada teste repetiria 6+ linhas de boilerplate.
+    O segundo parâmetro <code>overrides</code> permite sobrescrever qualquer campo
+    (ex.: <code>userId</code>, <code>completedAt</code>, <code>segment</code>) sem perder os defaults.
+  </div>
+
+  <!-- ── 3.2 answersToScores ── -->
+  <h3 class="sub-title">3.2 Suíte: answersToScores</h3>
+  <p>
+    Converte um mapa <code>Record&lt;string, number&gt;</code> de respostas em pontuações
+    por domínio TPACK (8 domínios: TK, PK, CK, TPK, TCK, PCK, TPACK, e mais).
+    Ignora valores 0, calcula médias e arredonda para 2 casas decimais.
+  </p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 39–70</span>
+  <pre>describe(<span class="st">'answersToScores'</span>, () =&gt; {
+  it(<span class="st">'calcula a média correta por domínio'</span>, () =&gt; {
+    <span class="kw">const</span> answers = { tk1: <span class="nm">4</span>, tk2: <span class="nm">2</span> }; <span class="cm">// média tk = 3.00</span>
+    <span class="kw">const</span> scores = <span class="fn">answersToScores</span>(answers);
+    <span class="kw">const</span> tk = scores.<span class="fn">find</span>(s =&gt; s.domain === <span class="st">'tk'</span>);
+    expect(tk?.score).<span class="fn">toBe</span>(<span class="nm">3</span>);
+  });
+
+  it(<span class="st">'retorna 0 para domínios sem respostas'</span>, () =&gt; {
+    <span class="kw">const</span> scores = <span class="fn">answersToScores</span>({});
+    expect(scores.<span class="fn">every</span>(s =&gt; s.score === <span class="nm">0</span>)).<span class="fn">toBe</span>(<span class="kw">true</span>);
+  });
+
+  it(<span class="st">'ignora valores iguais a 0 no cálculo'</span>, () =&gt; {
+    <span class="kw">const</span> answers = { tk1: <span class="nm">4</span>, tk2: <span class="nm">0</span> }; <span class="cm">// tk2=0 ignorado → média = 4</span>
+    <span class="kw">const</span> scores = <span class="fn">answersToScores</span>(answers);
+    <span class="kw">const</span> tk = scores.<span class="fn">find</span>(s =&gt; s.domain === <span class="st">'tk'</span>);
+    expect(tk?.score).<span class="fn">toBe</span>(<span class="nm">4</span>);
+  });
+
+  it(<span class="st">'retorna um score para cada domínio definido'</span>, () =&gt; {
+    <span class="kw">const</span> scores = <span class="fn">answersToScores</span>({});
+    expect(scores.length).<span class="fn">toBe</span>(<span class="nm">8</span>); <span class="cm">// 8 domínios TPACK</span>
+  });
+
+  it(<span class="st">'arredonda para 2 casas decimais'</span>, () =&gt; {
+    <span class="kw">const</span> scores = <span class="fn">answersToScores</span>({ pk1: <span class="nm">5</span>, pk2: <span class="nm">4</span> });
+    <span class="kw">const</span> pk = scores.<span class="fn">find</span>(s =&gt; s.domain === <span class="st">'pk'</span>);
+    expect(pk?.score).<span class="fn">toBe</span>(<span class="nm">4.5</span>);
+  });
+});</pre>
+
+  <table class="data">
+    <tr><th>#</th><th>Caso de Teste</th><th>Entrada</th><th>Saída Esperada</th><th>Status</th></tr>
+    <tr><td>1</td><td>Média por domínio</td><td><code>{tk1:4, tk2:2}</code></td><td><code>tk.score === 3</code></td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>2</td><td>Domínio sem respostas</td><td><code>{}</code></td><td><code>todos score === 0</code></td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>3</td><td>Ignora valor 0</td><td><code>{tk1:4, tk2:0}</code></td><td><code>tk.score === 4</code></td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>4</td><td>8 domínios retornados</td><td><code>{}</code></td><td><code>scores.length === 8</code></td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>5</td><td>Arredondamento 2 casas</td><td><code>{pk1:5, pk2:4}</code></td><td><code>pk.score === 4.5</code></td><td><span class="badge pass">PASS</span></td></tr>
+  </table>
+
+  <!-- ── 3.3 overallScore ── -->
+  <div class="page-break"></div>
+  <h3 class="sub-title">3.3 Suíte: overallScore</h3>
+  <p>Calcula a média geral entre todos os domínios com pontuação maior que zero.</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 74–97</span>
+  <pre>describe(<span class="st">'overallScore'</span>, () =&gt; {
+  it(<span class="st">'calcula a média entre domínios com score &gt; 0'</span>, () =&gt; {
+    <span class="kw">const</span> scores: <span class="tp">DomainScore</span>[] = [
+      { domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">4</span> },
+      { domain: <span class="st">'pk'</span>, label: <span class="st">'PK'</span>, score: <span class="nm">2</span> },
+    ];
+    expect(<span class="fn">overallScore</span>(scores)).<span class="fn">toBe</span>(<span class="nm">3.0</span>);
+  });
+
+  it(<span class="st">'ignora domínios com score 0'</span>, () =&gt; {
+    <span class="kw">const</span> scores: <span class="tp">DomainScore</span>[] = [
+      { domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">4</span> },
+      { domain: <span class="st">'pk'</span>, label: <span class="st">'PK'</span>, score: <span class="nm">0</span> },
+    ];
+    expect(<span class="fn">overallScore</span>(scores)).<span class="fn">toBe</span>(<span class="nm">4.0</span>);
+  });
+
+  it(<span class="st">'retorna 0 quando todos os scores são 0'</span>, () =&gt; {
+    <span class="kw">const</span> scores: <span class="tp">DomainScore</span>[] = [
+      { domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">0</span> },
+    ];
+    expect(<span class="fn">overallScore</span>(scores)).<span class="fn">toBe</span>(<span class="nm">0</span>);
+  });
+});</pre>
+
+  <table class="data">
+    <tr><th>#</th><th>Caso de Teste</th><th>Scores</th><th>Saída Esperada</th><th>Status</th></tr>
+    <tr><td>1</td><td>Média de dois domínios ativos</td><td><code>TK=4, PK=2</code></td><td><code>3.0</code></td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>2</td><td>Ignora score zero</td><td><code>TK=4, PK=0</code></td><td><code>4.0</code></td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>3</td><td>Todos zeros</td><td><code>TK=0</code></td><td><code>0</code></td><td><span class="badge pass">PASS</span></td></tr>
+  </table>
+
+  <!-- ── 3.4 getStrengths ── -->
+  <h3 class="sub-title">3.4 Suíte: getStrengths</h3>
+  <p>Retorna os 2 domínios com maior pontuação, excluindo scores zerados.</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 101–120</span>
+  <pre>describe(<span class="st">'getStrengths'</span>, () =&gt; {
+  <span class="kw">const</span> scores: <span class="tp">DomainScore</span>[] = [
+    { domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">5</span> },
+    { domain: <span class="st">'pk'</span>, label: <span class="st">'PK'</span>, score: <span class="nm">3</span> },
+    { domain: <span class="st">'ck'</span>, label: <span class="st">'CK'</span>, score: <span class="nm">4</span> },
+  ];
+
+  it(<span class="st">'retorna os 2 maiores scores'</span>, () =&gt; {
+    <span class="kw">const</span> result = <span class="fn">getStrengths</span>(scores);
+    expect(result).<span class="fn">toHaveLength</span>(<span class="nm">2</span>);
+    expect(result[<span class="nm">0</span>]).<span class="fn">toContain</span>(<span class="st">'TK'</span>);
+    expect(result[<span class="nm">1</span>]).<span class="fn">toContain</span>(<span class="st">'CK'</span>);
+  });
+
+  it(<span class="st">'ignora domínios com score 0'</span>, () =&gt; {
+    <span class="kw">const</span> withZero = [...scores, { domain: <span class="st">'pck'</span>, label: <span class="st">'PCK'</span>, score: <span class="nm">0</span> }];
+    <span class="kw">const</span> result = <span class="fn">getStrengths</span>(withZero);
+    expect(result.<span class="fn">some</span>(r =&gt; r.<span class="fn">includes</span>(<span class="st">'PCK'</span>))).<span class="fn">toBe</span>(<span class="kw">false</span>);
+  });
+});</pre>
+
+  <!-- ── 3.5 getImprovements ── -->
+  <h3 class="sub-title">3.5 Suíte: getImprovements</h3>
+  <p>Retorna os 2 domínios com menor pontuação (pontos de desenvolvimento).</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 122–135</span>
+  <pre>describe(<span class="st">'getImprovements'</span>, () =&gt; {
+  <span class="kw">const</span> scores: <span class="tp">DomainScore</span>[] = [
+    { domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">5</span> },
+    { domain: <span class="st">'pk'</span>, label: <span class="st">'PK'</span>, score: <span class="nm">1</span> },
+    { domain: <span class="st">'ck'</span>, label: <span class="st">'CK'</span>, score: <span class="nm">2</span> },
+  ];
+
+  it(<span class="st">'retorna os 2 menores scores'</span>, () =&gt; {
+    <span class="kw">const</span> result = <span class="fn">getImprovements</span>(scores);
+    expect(result).<span class="fn">toHaveLength</span>(<span class="nm">2</span>);
+    expect(result[<span class="nm">0</span>]).<span class="fn">toContain</span>(<span class="st">'PK'</span>);
+    expect(result[<span class="nm">1</span>]).<span class="fn">toContain</span>(<span class="st">'CK'</span>);
+  });
+});</pre>
+
+  <!-- ── 3.6 responsesToAvgScores ── -->
+  <div class="page-break"></div>
+  <h3 class="sub-title">3.6 Suíte: responsesToAvgScores</h3>
+  <p>Agrega múltiplas respostas de questionário em scores médios por domínio. Retorna <code>null</code> para entrada vazia.</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 139–158</span>
+  <pre>describe(<span class="st">'responsesToAvgScores'</span>, () =&gt; {
+  it(<span class="st">'retorna null para array vazio'</span>, () =&gt; {
+    expect(<span class="fn">responsesToAvgScores</span>([])).<span class="fn">toBeNull</span>();
+  });
+
+  it(<span class="st">'calcula a média correta entre múltiplas respostas'</span>, () =&gt; {
+    <span class="kw">const</span> r1 = <span class="fn">makeResponse</span>({ tk1: <span class="nm">4</span>, tk2: <span class="nm">4</span> }); <span class="cm">// tk = 4.00</span>
+    <span class="kw">const</span> r2 = <span class="fn">makeResponse</span>({ tk1: <span class="nm">2</span>, tk2: <span class="nm">2</span> }); <span class="cm">// tk = 2.00</span>
+    <span class="kw">const</span> avg = <span class="fn">responsesToAvgScores</span>([r1, r2]);
+    <span class="kw">const</span> tk = avg?.<span class="fn">find</span>(s =&gt; s.domain === <span class="st">'tk'</span>);
+    expect(tk?.score).<span class="fn">toBe</span>(<span class="nm">3</span>); <span class="cm">// média de 4.00 e 2.00</span>
+  });
+
+  it(<span class="st">'retorna 0 para domínios sem respostas em nenhuma entrada'</span>, () =&gt; {
+    <span class="kw">const</span> r = <span class="fn">makeResponse</span>({ tk1: <span class="nm">3</span>, tk2: <span class="nm">3</span> });
+    <span class="kw">const</span> avg = <span class="fn">responsesToAvgScores</span>([r]);
+    <span class="kw">const</span> pk = avg?.<span class="fn">find</span>(s =&gt; s.domain === <span class="st">'pk'</span>);
+    expect(pk?.score).<span class="fn">toBe</span>(<span class="nm">0</span>);
+  });
+});</pre>
+
+  <!-- ── 3.7 buildEvolutionData ── -->
+  <h3 class="sub-title">3.7 Suíte: buildEvolutionData</h3>
+  <p>
+    Constrói a série temporal de evolução do professor, convertendo cada resposta
+    em um ponto com campo <code>period</code> (ex.: <code>"jun/24"</code>) e scores por domínio.
+    Os pontos são ordenados por data crescente.
+  </p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 162–187</span>
+  <pre>describe(<span class="st">'buildEvolutionData'</span>, () =&gt; {
+  it(<span class="st">'retorna array vazio para entrada vazia'</span>, () =&gt; {
+    expect(<span class="fn">buildEvolutionData</span>([])).<span class="fn">toEqual</span>([]);
+  });
+
+  it(<span class="st">'ordena por data crescente'</span>, () =&gt; {
+    <span class="kw">const</span> older = <span class="fn">makeResponse</span>({ tk1: <span class="nm">3</span> }, {
+      id: <span class="st">'r-old'</span>,
+      completedAt: { seconds: <span class="nm">1000</span>, toDate: () =&gt; <span class="kw">new</span> <span class="fn">Date</span>(<span class="nm">1000000</span>) } <span class="kw">as</span> any,
+    });
+    <span class="kw">const</span> newer = <span class="fn">makeResponse</span>({ tk1: <span class="nm">4</span> }, {
+      id: <span class="st">'r-new'</span>,
+      completedAt: { seconds: <span class="nm">2000</span>, toDate: () =&gt; <span class="kw">new</span> <span class="fn">Date</span>(<span class="nm">2000000</span>) } <span class="kw">as</span> any,
+    });
+    <span class="kw">const</span> result = <span class="fn">buildEvolutionData</span>([newer, older]);
+    <span class="kw">const</span> tkLabel = <span class="st">'Conhecimento Tecnológico'</span>;
+    expect((result[<span class="nm">0</span>] <span class="kw">as</span> any)[tkLabel]).<span class="fn">toBeLessThan</span>((result[<span class="nm">1</span>] <span class="kw">as</span> any)[tkLabel]);
+  });
+
+  it(<span class="st">'gera um ponto por resposta com campo period'</span>, () =&gt; {
+    <span class="kw">const</span> r = <span class="fn">makeResponse</span>({ tk1: <span class="nm">3</span>, tk2: <span class="nm">3</span> });
+    <span class="kw">const</span> result = <span class="fn">buildEvolutionData</span>([r]);
+    expect(result).<span class="fn">toHaveLength</span>(<span class="nm">1</span>);
+    expect(result[<span class="nm">0</span>].period).<span class="fn">toBeDefined</span>();
+  });
+});</pre>
+
+  <div class="callout info">
+    <strong>Simulando Firestore Timestamp:</strong> O campo <code>completedAt</code> no Firestore não é
+    um <code>Date</code> puro, mas um objeto <code>&#123; seconds: number &#125;</code>.
+    O teste simula isso passando <code>&#123; seconds: 1000 &#125;</code> via <code>overrides</code>
+    para validar que o serviço converte corretamente ambos os formatos.
+  </div>
+
+  <!-- ── 3.8 buildComparisonData ── -->
+  <h3 class="sub-title">3.8 Suíte: buildComparisonData</h3>
+  <p>Monta os dados para o gráfico de barras comparativo (minha pontuação vs. escola vs. rede).</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 191–212</span>
+  <pre>describe(<span class="st">'buildComparisonData'</span>, () =&gt; {
+  <span class="kw">const</span> myScores: <span class="tp">DomainScore</span>[] = [
+    { domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">4</span> },
+  ];
+
+  it(<span class="st">'preenche escola e rede com 0 quando null'</span>, () =&gt; {
+    <span class="kw">const</span> result = <span class="fn">buildComparisonData</span>(myScores, <span class="kw">null</span>, <span class="kw">null</span>);
+    <span class="kw">const</span> tk = result.<span class="fn">find</span>(r =&gt; r.domain === <span class="st">'Conhecimento Tecnológico'</span>);
+    expect(tk?.escola).<span class="fn">toBe</span>(<span class="nm">0</span>);
+    expect(tk?.rede).<span class="fn">toBe</span>(<span class="nm">0</span>);
+  });
+
+  it(<span class="st">'usa os valores fornecidos de escola e rede'</span>, () =&gt; {
+    <span class="kw">const</span> school: <span class="tp">DomainScore</span>[] = [{ domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">3</span> }];
+    <span class="kw">const</span> network: <span class="tp">DomainScore</span>[] = [{ domain: <span class="st">'tk'</span>, label: <span class="st">'TK'</span>, score: <span class="nm">2</span> }];
+    <span class="kw">const</span> result = <span class="fn">buildComparisonData</span>(myScores, school, network);
+    <span class="kw">const</span> tk = result.<span class="fn">find</span>(r =&gt; r.domain === <span class="st">'Conhecimento Tecnológico'</span>);
+    expect(tk?.minha).<span class="fn">toBe</span>(<span class="nm">4</span>);
+    expect(tk?.escola).<span class="fn">toBe</span>(<span class="nm">3</span>);
+    expect(tk?.rede).<span class="fn">toBe</span>(<span class="nm">2</span>);
+  });
+});</pre>
+
+  <!-- ── 3.9 formatFirestoreDate ── -->
+  <div class="page-break"></div>
+  <h3 class="sub-title">3.9 Suíte: formatFirestoreDate</h3>
+  <p>Formata datas do Firestore (objeto com <code>.seconds</code> ou <code>Date</code>) para string <code>dd/mm/yyyy</code>.</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 216–232</span>
+  <pre>describe(<span class="st">'formatFirestoreDate'</span>, () =&gt; {
+  it(<span class="st">'retorna "—" para valor nulo'</span>, () =&gt; {
+    expect(<span class="fn">formatFirestoreDate</span>(<span class="kw">null</span>)).<span class="fn">toBe</span>(<span class="st">'—'</span>);
+    expect(<span class="fn">formatFirestoreDate</span>(<span class="kw">undefined</span>)).<span class="fn">toBe</span>(<span class="st">'—'</span>);
+  });
+
+  it(<span class="st">'formata um objeto Date'</span>, () =&gt; {
+    <span class="kw">const</span> result = <span class="fn">formatFirestoreDate</span>(<span class="kw">new</span> <span class="fn">Date</span>(<span class="st">'2024-06-15'</span>));
+    expect(result).<span class="fn">toMatch</span>(<span class="op">/\d{2}\/\d{2}\/\d{4}/</span>);
+  });
+
+  it(<span class="st">'formata um Firestore Timestamp (objeto com .seconds)'</span>, () =&gt; {
+    <span class="kw">const</span> ts = { seconds: <span class="kw">new</span> <span class="fn">Date</span>(<span class="st">'2024-01-20'</span>).<span class="fn">getTime</span>() / <span class="nm">1000</span> };
+    <span class="kw">const</span> result = <span class="fn">formatFirestoreDate</span>(ts);
+    expect(result).<span class="fn">toMatch</span>(<span class="op">/\d{2}\/\d{2}\/\d{4}/</span>);
+  });
+});</pre>
+
+  <!-- ── 3.10 classifyTeacherResponseStatus ── -->
+  <h3 class="sub-title">3.10 Suíte: classifyTeacherResponseStatus</h3>
+  <p>Classifica professores como <code>"responded"</code> ou <code>"not_started"</code> para um questionário específico.</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 236–257</span>
+  <pre>describe(<span class="st">'classifyTeacherResponseStatus'</span>, () =&gt; {
+  <span class="kw">const</span> teachers = [
+    { uid: <span class="st">'prof1'</span>, name: <span class="st">'Ana'</span> },
+    { uid: <span class="st">'prof2'</span>, name: <span class="st">'Bruno'</span> },
+  ];
+  <span class="kw">const</span> responses = [<span class="fn">makeResponse</span>({}, { userId: <span class="st">'prof1'</span>, questionnaireId: <span class="st">'q1'</span> })];
+
+  it(<span class="st">'marca professor que respondeu como "responded"'</span>, () =&gt; {
+    <span class="kw">const</span> result = <span class="fn">classifyTeacherResponseStatus</span>(teachers, responses, <span class="st">'q1'</span>);
+    expect(result.<span class="fn">find</span>(t =&gt; t.uid === <span class="st">'prof1'</span>)?.status).<span class="fn">toBe</span>(<span class="st">'responded'</span>);
+  });
+
+  it(<span class="st">'marca professor que não respondeu como "not_started"'</span>, () =&gt; {
+    <span class="kw">const</span> result = <span class="fn">classifyTeacherResponseStatus</span>(teachers, responses, <span class="st">'q1'</span>);
+    expect(result.<span class="fn">find</span>(t =&gt; t.uid === <span class="st">'prof2'</span>)?.status).<span class="fn">toBe</span>(<span class="st">'not_started'</span>);
+  });
+
+  it(<span class="st">'ignora respostas de outro questionário'</span>, () =&gt; {
+    <span class="kw">const</span> result = <span class="fn">classifyTeacherResponseStatus</span>(teachers, responses, <span class="st">'q-outro'</span>);
+    expect(result.<span class="fn">every</span>(t =&gt; t.status === <span class="st">'not_started'</span>)).<span class="fn">toBe</span>(<span class="kw">true</span>);
+  });
+});</pre>
+
+  <!-- ── 3.11 groupBySegment ── -->
+  <h3 class="sub-title">3.11 Suíte: groupBySegment</h3>
+  <p>Agrupa respostas pelo segmento educacional e calcula scores médios por grupo.</p>
+  <span class="file-path">src/services/analyticsService.test.ts — linhas 261–277</span>
+  <pre>describe(<span class="st">'groupBySegment'</span>, () =&gt; {
+  it(<span class="st">'agrupa respostas pelo campo segment'</span>, () =&gt; {
+    <span class="kw">const</span> r1 = <span class="fn">makeResponse</span>({ tk1: <span class="nm">4</span> }, { segment: <span class="st">'anos_iniciais'</span> <span class="kw">as</span> any });
+    <span class="kw">const</span> r2 = <span class="fn">makeResponse</span>({ tk1: <span class="nm">2</span> }, { segment: <span class="st">'anos_iniciais'</span> <span class="kw">as</span> any });
+    <span class="kw">const</span> r3 = <span class="fn">makeResponse</span>({ tk1: <span class="nm">5</span> }, { segment: <span class="st">'ensino_medio'</span> <span class="kw">as</span> any });
+    <span class="kw">const</span> result = <span class="fn">groupBySegment</span>([r1, r2, r3]);
+    expect(result).<span class="fn">toHaveLength</span>(<span class="nm">2</span>);
+    <span class="kw">const</span> ai = result.<span class="fn">find</span>(r =&gt; r.segment === <span class="st">'anos_iniciais'</span>);
+    expect(ai?.total).<span class="fn">toBe</span>(<span class="nm">2</span>);
+  });
+
+  it(<span class="st">'usa "Não informado" para respostas sem segment'</span>, () =&gt; {
+    <span class="kw">const</span> r = <span class="fn">makeResponse</span>({});
+    <span class="kw">const</span> result = <span class="fn">groupBySegment</span>([r]);
+    expect(result[<span class="nm">0</span>].segment).<span class="fn">toBe</span>(<span class="st">'Não informado'</span>);
+  });
+});</pre>
+</section>
+
+<!-- ══════════════════════════════════════════════ 4. FIX ══ -->
+<div class="page-break"></div>
+<section id="fix">
+  <h2 class="section-title"><span class="num">4</span> Correção Aplicada — makeResponse</h2>
+
+  <h3 class="sub-title">4.1 O Problema</h3>
+  <p>
+    Ao rodar os testes pela primeira vez, o Vitest retornou um erro que impedia
+    a execução da suíte inteira:
+  </p>
+  <pre><span class="cm">FAIL  src/services/analyticsService.test.ts</span>
+<span class="kw">ReferenceError</span>: makeResponse is not defined
+ ❯ src/services/analyticsService.test.ts:<span class="nm">226</span>:<span class="nm">21</span>
+    <span class="nm">224</span>| const teachers = [...]
+    <span class="nm">225</span>| const responses = [<span class="fn">makeResponse</span>({}, { userId: <span class="st">'prof1'</span>, questionnaireId: <span class="st">'q1'</span> })];
+       |                   ^</pre>
+
+  <div class="callout warn">
+    <strong>Causa raiz:</strong> A seção <code>// ── Helpers ───</code> no topo do arquivo de teste
+    estava vazia. A função <code>makeResponse</code> era referenciada em múltiplos
+    <code>describe</code> mas nunca havia sido definida — o bloco de código foi
+    deletado ou nunca foi escrito.
+  </div>
+
+  <h3 class="sub-title">4.2 Por que o erro era grave</h3>
+  <p>
+    O erro ocorre em <em>nível de módulo</em> (fora de um <code>it()</code>), na linha:
+  </p>
+  <pre><span class="kw">const</span> responses = [<span class="fn">makeResponse</span>({}, { userId: <span class="st">'prof1'</span> })]; <span class="cm">// nível do describe</span></pre>
+  <p>
+    Como o JavaScript avalia esse código ao carregar o módulo, <strong>toda a suíte falha antes
+    de executar qualquer teste</strong> — não apenas o teste onde o helper é chamado.
+    Isso explica a mensagem <code>Tests: no tests</code> no relatório do Vitest.
+  </p>
+
+  <h3 class="sub-title">4.3 A Solução</h3>
+  <p>
+    Foi adicionado o helper <code>makeResponse</code> na seção de helpers
+    (linhas 19–32 do arquivo), com tipagem completa e suporte a overrides:
+  </p>
+  <span class="file-path">src/services/analyticsService.test.ts — adicionado nas linhas 19–32</span>
+  <pre><span class="kw">function</span> <span class="fn">makeResponse</span>(
+  rawAnswers: Record&lt;<span class="tp">string</span>, <span class="tp">number</span>&gt;,
+  overrides: Partial&lt;<span class="tp">QuestionnaireResponse</span>&gt; = {},
+): <span class="tp">QuestionnaireResponse</span> {
+  <span class="kw">return</span> {
+    id: <span class="st">'test-id'</span>,
+    questionnaireId: <span class="st">'q-default'</span>,
+    userId: <span class="st">'user-default'</span>,
+    schoolId: <span class="st">'school-default'</span>,
+    <span class="cm">// converte { tk1: 4, tk2: 2 } → [{ questionId: 'tk1', value: 4 }, ...]</span>
+    answers: Object.<span class="fn">entries</span>(rawAnswers).<span class="fn">map</span>(([questionId, value]) =&gt; ({ questionId, value })),
+    completedAt: <span class="kw">new</span> <span class="fn">Date</span>(),
+    ...overrides,
+  };
+}</pre>
+
+  <div class="callout ok">
+    <strong>Resultado:</strong> Após a correção, todos os 33 testes passaram em 324ms.
+    O erro ReferenceError foi eliminado e nenhum teste foi alterado — apenas o helper foi criado.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ 5. ESLINT ══ -->
+<div class="page-break"></div>
+<section id="eslint">
+  <h2 class="section-title"><span class="num">5</span> Análise Estática — ESLint</h2>
+
+  <p>
+    O projeto já tinha o ESLint e seus plugins instalados nas devDependencies,
+    mas <strong>nenhum arquivo de configuração existia</strong>.
+    O script <code>"lint"</code> no <code>package.json</code> também usava o padrão <code>"."</code>
+    que não funciona no Windows com ESLint 8.
+    Foram criados o arquivo de configuração e corrigido o script.
+  </p>
+
+  <h3 class="sub-title">5.1 Arquivo de Configuração Criado</h3>
+  <span class="file-path">.eslintrc.cjs</span>
+  <pre>module.exports = {
+  root: <span class="kw">true</span>,
+  env: { browser: <span class="kw">true</span>, es2020: <span class="kw">true</span> },
+  extends: [
+    <span class="st">'eslint:recommended'</span>,
+    <span class="st">'plugin:@typescript-eslint/recommended'</span>,
+    <span class="st">'plugin:react-hooks/recommended'</span>,
+  ],
+  ignorePatterns: [<span class="st">'dist'</span>, <span class="st">'node_modules'</span>, <span class="st">'coverage'</span>],
+  parser: <span class="st">'@typescript-eslint/parser'</span>,
+  parserOptions: {
+    ecmaVersion: <span class="st">'latest'</span>,
+    sourceType: <span class="st">'module'</span>,
+  },
+  plugins: [<span class="st">'react-refresh'</span>, <span class="st">'@typescript-eslint'</span>],
+  rules: {
+    <span class="cm">// React</span>
+    <span class="st">'react-refresh/only-export-components'</span>: [<span class="st">'warn'</span>, { allowConstantExport: <span class="kw">true</span> }],
+
+    <span class="cm">// TypeScript — análise estática</span>
+    <span class="st">'@typescript-eslint/no-explicit-any'</span>: <span class="st">'warn'</span>,
+    <span class="st">'@typescript-eslint/no-unused-vars'</span>: [<span class="st">'error'</span>, { argsIgnorePattern: <span class="st">'^_'</span>, varsIgnorePattern: <span class="st">'^_'</span> }],
+    <span class="st">'@typescript-eslint/consistent-type-imports'</span>: [<span class="st">'warn'</span>, { prefer: <span class="st">'type-imports'</span> }],
+
+    <span class="cm">// Qualidade geral</span>
+    <span class="st">'no-console'</span>: [<span class="st">'warn'</span>, { allow: [<span class="st">'warn'</span>, <span class="st">'error'</span>] }],
+    <span class="st">'no-debugger'</span>: <span class="st">'error'</span>,
+    <span class="st">'prefer-const'</span>: <span class="st">'error'</span>,
+    <span class="st">'no-var'</span>: <span class="st">'error'</span>,
+    <span class="st">'eqeqeq'</span>: [<span class="st">'error'</span>, <span class="st">'always'</span>, { <span class="kw">null</span>: <span class="st">'ignore'</span> }],
+  },
+  overrides: [
+    {
+      files: [<span class="st">'*.test.ts'</span>, <span class="st">'*.test.tsx'</span>],
+      rules: {
+        <span class="st">'@typescript-eslint/no-explicit-any'</span>: <span class="st">'off'</span>, <span class="cm">// permitido em testes</span>
+      },
+    },
+  ],
+};</pre>
+
+  <h3 class="sub-title">5.2 Regras e Suas Finalidades</h3>
+  <table class="data">
+    <tr><th>Regra</th><th>Nível</th><th>O que detecta</th></tr>
+    <tr>
+      <td><code>@typescript-eslint/no-explicit-any</code></td>
+      <td><span class="badge warn">warn</span></td>
+      <td>Uso de <code>any</code> sem intenção explícita — reduz segurança de tipos</td>
+    </tr>
+    <tr>
+      <td><code>@typescript-eslint/no-unused-vars</code></td>
+      <td><span class="badge error">error</span></td>
+      <td>Variáveis declaradas mas nunca usadas (exceto prefixo <code>_</code>)</td>
+    </tr>
+    <tr>
+      <td><code>@typescript-eslint/consistent-type-imports</code></td>
+      <td><span class="badge warn">warn</span></td>
+      <td>Imports de tipo devem usar <code>import type</code> para tree-shaking</td>
+    </tr>
+    <tr>
+      <td><code>react-refresh/only-export-components</code></td>
+      <td><span class="badge warn">warn</span></td>
+      <td>Arquivos com exports mistos impedem o Fast Refresh do Vite</td>
+    </tr>
+    <tr>
+      <td><code>no-console</code></td>
+      <td><span class="badge warn">warn</span></td>
+      <td><code>console.log</code> esquecido em produção (permite <code>.warn</code> e <code>.error</code>)</td>
+    </tr>
+    <tr>
+      <td><code>no-debugger</code></td>
+      <td><span class="badge error">error</span></td>
+      <td>Instrução <code>debugger</code> deixada no código</td>
+    </tr>
+    <tr>
+      <td><code>prefer-const</code></td>
+      <td><span class="badge error">error</span></td>
+      <td>Variável declarada com <code>let</code> que nunca é reatribuída</td>
+    </tr>
+    <tr>
+      <td><code>no-var</code></td>
+      <td><span class="badge error">error</span></td>
+      <td>Uso de <code>var</code> com escopo de função (deve usar <code>let</code>/<code>const</code>)</td>
+    </tr>
+    <tr>
+      <td><code>eqeqeq</code></td>
+      <td><span class="badge error">error</span></td>
+      <td>Comparação com <code>==</code> em vez de <code>===</code></td>
+    </tr>
+  </table>
+
+  <h3 class="sub-title">5.3 Script Corrigido no package.json</h3>
+  <span class="file-path">package.json</span>
+  <pre><span class="cm">// ANTES — não funcionava no Windows com ESLint 8</span>
+<span class="st">"lint"</span>: <span class="st">"eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"</span>
+
+<span class="cm">// DEPOIS — glob explícito + script de correção automática adicionado</span>
+<span class="st">"lint"</span>:      <span class="st">"eslint \"src/**/*.ts\" \"src/**/*.tsx\" --report-unused-disable-directives --max-warnings 0"</span>,
+<span class="st">"lint:fix"</span>:  <span class="st">"eslint \"src/**/*.ts\" \"src/**/*.tsx\" --fix"</span></pre>
+
+  <h3 class="sub-title">5.4 Resultado da Primeira Varredura</h3>
+  <table class="data">
+    <tr><th>Categoria</th><th>Quantidade</th><th>Ação</th></tr>
+    <tr>
+      <td>Erros (<code>@typescript-eslint/prefer-as-const</code>)</td>
+      <td>1</td>
+      <td><span class="badge fixed">AUTO-CORRIGIDO</span></td>
+    </tr>
+    <tr>
+      <td>Warnings (<code>consistent-type-imports</code>)</td>
+      <td>~23</td>
+      <td><span class="badge fixed">AUTO-CORRIGIDO</span></td>
+    </tr>
+    <tr>
+      <td>Warnings (<code>no-explicit-any</code>)</td>
+      <td>89</td>
+      <td><span class="badge warn">MONITORADO</span></td>
+    </tr>
+    <tr>
+      <td>Warnings (<code>react-refresh</code>)</td>
+      <td>2</td>
+      <td><span class="badge warn">MONITORADO</span></td>
+    </tr>
+  </table>
+
+  <div class="callout info">
+    <strong>Sobre os 89 warnings de <code>any</code>:</strong> São usos intencionais em handlers de erro
+    do Firebase (<code>catch (error: any)</code>) e em dados vindos do Firestore
+    que não têm tipagem estática no SDK. São deixados como <code>warn</code>
+    para visibilidade sem bloquear o build.
+  </div>
+
+  <h3 class="sub-title">5.5 Camadas de Análise Estática no Projeto</h3>
+  <table class="data">
+    <tr><th>Camada</th><th>Ferramenta</th><th>O que analisa</th><th>Quando roda</th></tr>
+    <tr>
+      <td>Tipos</td>
+      <td>TypeScript <code>strict</code></td>
+      <td>Tipos incorretos, variáveis não usadas, parâmetros não usados, fallthrough em switch</td>
+      <td><code>npm run build</code></td>
+    </tr>
+    <tr>
+      <td>Linting</td>
+      <td>ESLint + @typescript-eslint</td>
+      <td>any explícito, import type, prefer-const, eqeqeq, react-hooks</td>
+      <td><code>npm run lint</code></td>
+    </tr>
+    <tr>
+      <td>Testes</td>
+      <td>Vitest</td>
+      <td>Lógica de cálculo, edge cases, transformações de dados</td>
+      <td><code>npm test</code></td>
+    </tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════════ 6. RESUMO ══ -->
+<div class="page-break"></div>
+<section id="summary">
+  <h2 class="section-title"><span class="num">6</span> Resumo Geral — Todos os Testes</h2>
+
+  <table class="data">
+    <tr>
+      <th>#</th>
+      <th>Arquivo</th>
+      <th>Suíte (describe)</th>
+      <th>Caso de Teste (it)</th>
+      <th>Status</th>
+    </tr>
+    <!-- userUtils -->
+    <tr><td>1</td><td rowspan="6"><code>userUtils.test.ts</code></td><td rowspan="6">initials</td><td>retorna as iniciais de nome e sobrenome</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>2</td><td>retorna apenas a inicial quando há um único nome</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>3</td><td>usa apenas as duas primeiras palavras mesmo com nome composto</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>4</td><td>converte para maiúsculas</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>5</td><td>ignora espaços extras</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>6</td><td>retorna string vazia para entrada vazia</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- answersToScores -->
+    <tr><td>7</td><td rowspan="27"><code>analyticsService.test.ts</code></td><td rowspan="5">answersToScores</td><td>calcula a média correta por domínio</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>8</td><td>retorna 0 para domínios sem respostas</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>9</td><td>ignora valores iguais a 0 no cálculo</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>10</td><td>retorna um score para cada domínio definido</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>11</td><td>arredonda para 2 casas decimais</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- overallScore -->
+    <tr><td>12</td><td rowspan="3">overallScore</td><td>calcula a média entre domínios com score &gt; 0</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>13</td><td>ignora domínios com score 0</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>14</td><td>retorna 0 quando todos os scores são 0</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- getStrengths -->
+    <tr><td>15</td><td rowspan="2">getStrengths</td><td>retorna os 2 maiores scores</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>16</td><td>ignora domínios com score 0</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- getImprovements -->
+    <tr><td>17</td><td>getImprovements</td><td>retorna os 2 menores scores</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- responsesToAvgScores -->
+    <tr><td>18</td><td rowspan="3">responsesToAvgScores</td><td>retorna null para array vazio</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>19</td><td>calcula a média correta entre múltiplas respostas</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>20</td><td>retorna 0 para domínios sem respostas em nenhuma entrada</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- buildEvolutionData -->
+    <tr><td>21</td><td rowspan="3">buildEvolutionData</td><td>retorna array vazio para entrada vazia</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>22</td><td>ordena por data crescente</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>23</td><td>gera um ponto por resposta com campo period</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- buildComparisonData -->
+    <tr><td>24</td><td rowspan="2">buildComparisonData</td><td>preenche escola e rede com 0 quando null</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>25</td><td>usa os valores fornecidos de escola e rede</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- formatFirestoreDate -->
+    <tr><td>26</td><td rowspan="3">formatFirestoreDate</td><td>retorna "—" para valor nulo</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>27</td><td>formata um objeto Date</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>28</td><td>formata um Firestore Timestamp (objeto com .seconds)</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- classifyTeacherResponseStatus -->
+    <tr><td>29</td><td rowspan="3">classifyTeacherResponseStatus</td><td>marca professor que respondeu como "responded"</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>30</td><td>marca professor que não respondeu como "not_started"</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>31</td><td>ignora respostas de outro questionário</td><td><span class="badge pass">PASS</span></td></tr>
+    <!-- groupBySegment -->
+    <tr><td>32</td><td rowspan="2">groupBySegment</td><td>agrupa respostas pelo campo segment</td><td><span class="badge pass">PASS</span></td></tr>
+    <tr><td>33</td><td>usa "Não informado" para respostas sem segment</td><td><span class="badge pass">PASS</span></td></tr>
+  </table>
+
+  <h3 class="sub-title">Métricas Finais</h3>
+  <table class="data">
+    <tr><th>Métrica</th><th>Valor</th></tr>
+    <tr><td>Total de testes</td><td><strong>33</strong></td></tr>
+    <tr><td>Testes passando</td><td><strong>33 (100%)</strong></td></tr>
+    <tr><td>Testes falhando</td><td>0</td></tr>
+    <tr><td>Arquivos de teste</td><td>2</td></tr>
+    <tr><td>Suítes (describe)</td><td>10</td></tr>
+    <tr><td>Tempo de execução</td><td>~324ms</td></tr>
+    <tr><td>Correções aplicadas</td><td>1 bug crítico (makeResponse) + 24 auto-fixes do ESLint</td></tr>
+    <tr><td>Regras ESLint ativas</td><td>9 regras (4 error, 5 warn)</td></tr>
+    <tr><td>Arquivos varridos pelo linter</td><td>todos os .ts/.tsx em src/</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════════ 7. CYPRESS CONFIG ══ -->
+<div class="page-break"></div>
+<section id="cypress-config">
+  <h2 class="section-title"><span class="num">7</span> Cypress — Configuração e Infraestrutura</h2>
+
+  <p>
+    O projeto utiliza o <strong>Cypress v13</strong> em dois modos:
+    <strong>E2E</strong> (testa o app completo no browser contra o Firebase real ou credenciais de teste)
+    e <strong>Component</strong> (monta componentes React isolados com Vite, sem precisar de servidor).
+  </p>
+
+  <h3 class="sub-title">7.1 cypress.config.cts</h3>
+  <span class="file-path">cypress.config.cts</span>
+  <pre><span class="kw">import</span> { defineConfig } <span class="kw">from</span> <span class="st">'cypress'</span>;
+
+<span class="kw">export default</span> <span class="fn">defineConfig</span>({
+  e2e: {
+    baseUrl: <span class="st">'http://localhost:3000'</span>,
+    supportFile: <span class="st">'cypress/support/e2e.ts'</span>,
+    specPattern: <span class="st">'cypress/e2e/**/*.cy.ts'</span>,
+    viewportWidth: <span class="nm">1280</span>,
+    viewportHeight: <span class="nm">800</span>,
+    video: <span class="kw">false</span>,
+    screenshotOnRunFailure: <span class="kw">true</span>,
+    defaultCommandTimeout: <span class="nm">8000</span>,
+  },
+  component: {
+    devServer: {
+      framework: <span class="st">'react'</span>,
+      bundler: <span class="st">'vite'</span>,
+    },
+    supportFile: <span class="st">'cypress/support/component.ts'</span>,
+    specPattern: <span class="st">'cypress/component/**/*.cy.tsx'</span>,
+    viewportWidth: <span class="nm">800</span>,
+    viewportHeight: <span class="nm">600</span>,
+  },
+  env: {
+    <span class="cm">// Credenciais definidas em cypress.env.json (não versionado)</span>
+    TEST_PROFESSOR_EMAIL: <span class="st">''</span>,
+    TEST_PROFESSOR_PASSWORD: <span class="st">''</span>,
+    TEST_GESTOR_EMAIL: <span class="st">''</span>,
+    TEST_GESTOR_PASSWORD: <span class="st">''</span>,
+    TEST_SECRETARIA_EMAIL: <span class="st">''</span>,
+    TEST_SECRETARIA_PASSWORD: <span class="st">''</span>,
+  },
+});</pre>
+
+  <h3 class="sub-title">7.2 Comandos Customizados — cypress/support/commands.ts</h3>
+  <span class="file-path">cypress/support/commands.ts</span>
+  <pre><span class="cm">/** Login via formulário — reutiliza sessão entre testes do mesmo perfil */</span>
+Cypress.Commands.<span class="fn">add</span>(<span class="st">'loginAs'</span>, (role: <span class="st">'professor'</span> | <span class="st">'gestor'</span> | <span class="st">'secretaria'</span>) =&gt; {
+  <span class="kw">const</span> emails    = { professor: Cypress.<span class="fn">env</span>(<span class="st">'TEST_PROFESSOR_EMAIL'</span>), ... };
+  <span class="kw">const</span> passwords = { professor: Cypress.<span class="fn">env</span>(<span class="st">'TEST_PROFESSOR_PASSWORD'</span>), ... };
+
+  cy.<span class="fn">session</span>([<span class="st">`auth-${role}`</span>], () =&gt; {
+    cy.<span class="fn">visit</span>(<span class="st">'/login'</span>);
+    cy.<span class="fn">get</span>(<span class="st">'[data-testid="email-input"]'</span>).<span class="fn">type</span>(emails[role]);
+    cy.<span class="fn">get</span>(<span class="st">'[data-testid="password-input"]'</span>).<span class="fn">type</span>(passwords[role]);
+    cy.<span class="fn">get</span>(<span class="st">'[data-testid="login-submit"]'</span>).<span class="fn">click</span>();
+    cy.url().<span class="fn">should</span>(<span class="st">'include'</span>, <span class="st">`/app/${role}/inicio`</span>);
+  });
+});
+
+<span class="cm">/** Intercepta chamadas Firebase Auth com fixture mockada */</span>
+Cypress.Commands.<span class="fn">add</span>(<span class="st">'stubFirebaseAuth'</span>, (fixture) =&gt; {
+  cy.<span class="fn">intercept</span>(<span class="st">'POST'</span>, <span class="st">'**/accounts:signInWithPassword**'</span>, {
+    statusCode: <span class="nm">200</span>,
+    body: { idToken: <span class="st">'mock-id-token-'</span> + fixture.role, ... },
+  }).<span class="fn">as</span>(<span class="st">'firebaseLogin'</span>);
+});
+
+<span class="cm">/** Aguarda desaparecimento do spinner de loading */</span>
+Cypress.Commands.<span class="fn">add</span>(<span class="st">'waitForPage'</span>, () =&gt; {
+  cy.<span class="fn">get</span>(<span class="st">'[data-testid="loading-spinner"]'</span>, { timeout: <span class="nm">10000</span> })
+    .<span class="fn">should</span>(<span class="st">'not.exist'</span>);
+});</pre>
+
+  <h3 class="sub-title">7.3 Scripts npm para Cypress</h3>
+  <table class="data">
+    <tr><th>Script</th><th>Comando</th><th>Uso</th></tr>
+    <tr><td><code>cy:open</code></td><td><code>cypress open</code></td><td>Abre o Cypress Test Runner interativo</td></tr>
+    <tr><td><code>cy:run</code></td><td><code>cypress run</code></td><td>Executa todos os testes em modo headless (CI)</td></tr>
+    <tr><td><code>cy:run:e2e</code></td><td><code>cypress run --e2e</code></td><td>Somente testes E2E</td></tr>
+    <tr><td><code>cy:run:component</code></td><td><code>cypress run --component</code></td><td>Somente testes de componente</td></tr>
+    <tr><td><code>cy:test</code></td><td><code>cypress run --component</code></td><td>Alias para componentes</td></tr>
+  </table>
+
+  <div class="callout info">
+    <strong>Pré-requisito para E2E autenticado:</strong> criar o arquivo <code>cypress.env.json</code>
+    (não versionado) com as credenciais reais de teste. Os testes autenticados
+    verificam a presença das credenciais e pulam graciosamente com <code>cy.log()</code>
+    caso não estejam configuradas.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ 8. CYPRESS E2E ══ -->
+<div class="page-break"></div>
+<section id="cypress-e2e">
+  <h2 class="section-title"><span class="num">8</span> Cypress E2E — Testes de Ponta a Ponta</h2>
+
+  <p>
+    Os testes E2E simulam um usuário real navegando pelo app no browser.
+    Estão organizados em 4 arquivos por perfil de acesso e cobrem tanto
+    <strong>UI sem autenticação</strong> (qualquer ambiente) quanto
+    <strong>fluxos autenticados</strong> (requerem <code>cypress.env.json</code>).
+  </p>
+
+  <!-- ── 01-auth ── -->
+  <h3 class="sub-title">8.1 Autenticação — cypress/e2e/01-auth.cy.ts</h3>
+  <span class="file-path">cypress/e2e/01-auth.cy.ts</span>
+  <pre>describe(<span class="st">'Autenticação'</span>, () =&gt; {
+  <span class="fn">beforeEach</span>(() =&gt; { cy.<span class="fn">visit</span>(<span class="st">'/login'</span>); });
+
+  context(<span class="st">'Página de Login - UI e Validação'</span>, () =&gt; {
+    it(<span class="st">'exibe logo e título da plataforma'</span>, ...)
+    it(<span class="st">'exibe campos de email e senha'</span>, ...)
+    it(<span class="st">'exibe botão de login desabilitado com campos vazios'</span>, ...)
+    it(<span class="st">'exibe toggle para mostrar/ocultar senha'</span>, ...)
+    it(<span class="st">'exibe link para página de cadastro'</span>, ...)
+    it(<span class="st">'exibe botão de login com Google'</span>, ...)
+    it(<span class="st">'exibe mensagem de erro para credenciais inválidas'</span>, ...)
+    it(<span class="st">'redireciona "/" para login quando não autenticado'</span>, ...)
+    it(<span class="st">'redireciona rota protegida para login quando não autenticado'</span>, ...)
+  });
+
+  context(<span class="st">'Página de Cadastro - UI e Validação'</span>, () =&gt; {
+    <span class="fn">beforeEach</span>(() =&gt; { cy.<span class="fn">visit</span>(<span class="st">'/register'</span>); });
+    it(<span class="st">'exibe formulário de cadastro'</span>, ...)
+    it(<span class="st">'exibe campo de nome'</span>, ...)
+    it(<span class="st">'exibe campo de email'</span>, ...)
+    it(<span class="st">'exibe campo de senha'</span>, ...)
+    it(<span class="st">'exibe seletor de perfil (professor/gestor/secretaria)'</span>, ...)
+    it(<span class="st">'exibe link para voltar ao login'</span>, ...)
+  });
+});</pre>
+  <table class="data">
+    <tr><th>Context</th><th>Testes</th><th>Requer Auth</th></tr>
+    <tr><td>Página de Login — UI e Validação</td><td>9</td><td>Não</td></tr>
+    <tr><td>Página de Cadastro — UI e Validação</td><td>6</td><td>Não</td></tr>
+  </table>
+
+  <!-- ── 02-professor ── -->
+  <h3 class="sub-title">8.2 Professor — cypress/e2e/02-professor.cy.ts</h3>
+  <span class="file-path">cypress/e2e/02-professor.cy.ts</span>
+  <pre>describe(<span class="st">'Professor - Página de Login (UI sem autenticação real)'</span>, () =&gt; {
+  it(<span class="st">'exibe a página de login ao acessar rota do professor sem auth'</span>, ...)
+});
+
+describe(<span class="st">'Professor - Fluxo completo (requer conta real)'</span>, () =&gt; {
+  <span class="fn">beforeEach</span>(() =&gt; { cy.<span class="fn">loginAs</span>(<span class="st">'professor'</span>); });
+
+  context(<span class="st">'Página Inicial'</span>, () =&gt; {
+    it(<span class="st">'exibe a saudação ao professor'</span>, ...)
+    it(<span class="st">'exibe cards de estatísticas (KPIs)'</span>, ...)
+    it(<span class="st">'exibe botão para responder questionário'</span>, ...)
+  });
+
+  context(<span class="st">'Questionário TPACK (multi-passo)'</span>, () =&gt; {
+    it(<span class="st">'exibe a primeira seção (Contextualização)'</span>, ...)
+    it(<span class="st">'exibe indicador de progresso com 5 seções'</span>, ...)
+    it(<span class="st">'botão Próximo ativa após selecionar resposta obrigatória'</span>, ...)
+    it(<span class="st">'navega para seção seguinte ao clicar em Próximo'</span>, ...)
+    it(<span class="st">'botão Voltar retorna para seção anterior'</span>, ...)
+  });
+
+  context(<span class="st">'Relatórios'</span>, () =&gt; {
+    it(<span class="st">'exibe página de relatórios'</span>, ...)
+    it(<span class="st">'exibe estado vazio ou abas com dados'</span>, ...)
+  });
+
+  context(<span class="st">'Perfil'</span>, () =&gt; {
+    it(<span class="st">'exibe dados do perfil'</span>, ...)
+    it(<span class="st">'exibe campos editáveis'</span>, ...)
+    it(<span class="st">'exibe botão Salvar'</span>, ...)
+  });
+
+  context(<span class="st">'Navegação lateral'</span>, () =&gt; {
+    it(<span class="st">'sidebar exibe links de navegação do professor'</span>, ...)
+    it(<span class="st">'clicar em Relatórios navega corretamente'</span>, ...)
+    it(<span class="st">'clicar em Questionário navega corretamente'</span>, ...)
+  });
+});</pre>
+  <table class="data">
+    <tr><th>Context</th><th>Testes</th><th>Requer Auth</th></tr>
+    <tr><td>UI sem autenticação</td><td>1</td><td>Não</td></tr>
+    <tr><td>Página Inicial</td><td>3</td><td>Sim (professor)</td></tr>
+    <tr><td>Questionário TPACK</td><td>5</td><td>Sim (professor)</td></tr>
+    <tr><td>Relatórios</td><td>2</td><td>Sim (professor)</td></tr>
+    <tr><td>Perfil</td><td>3</td><td>Sim (professor)</td></tr>
+    <tr><td>Navegação lateral</td><td>3</td><td>Sim (professor)</td></tr>
+  </table>
+
+  <!-- ── 03-gestor ── -->
+  <div class="page-break"></div>
+  <h3 class="sub-title">8.3 Gestor — cypress/e2e/03-gestor.cy.ts</h3>
+  <span class="file-path">cypress/e2e/03-gestor.cy.ts</span>
+  <pre>describe(<span class="st">'Gestor - Redirecionamento sem autenticação'</span>, () =&gt; {
+  it(<span class="st">'redireciona para login ao acessar rota do gestor sem auth'</span>, ...)
+});
+
+describe(<span class="st">'Gestor - Fluxo completo (requer conta real)'</span>, () =&gt; {
+  <span class="fn">beforeEach</span>(() =&gt; { cy.<span class="fn">loginAs</span>(<span class="st">'gestor'</span>); });
+
+  context(<span class="st">'Página Inicial (Dashboard)'</span>, () =&gt; {
+    it(<span class="st">'exibe título da página'</span>, ...)
+    it(<span class="st">'exibe KPIs: professores, taxa de resposta, pontuação'</span>, ...)
+    it(<span class="st">'exibe prompt de configuração quando escola não cadastrada'</span>, ...)
+  });
+
+  context(<span class="st">'Gestão de Equipe'</span>, () =&gt; {
+    it(<span class="st">'exibe título "Equipe"'</span>, ...)
+    it(<span class="st">'exibe botão "Convidar professor"'</span>, ...)
+    it(<span class="st">'exibe cards de estatísticas da equipe'</span>, ...)
+    it(<span class="st">'abre modal de convite ao clicar em "Convidar professor"'</span>, ...)
+    it(<span class="st">'fecha modal de convite ao clicar em Cancelar'</span>, ...)
+    it(<span class="st">'botão Enviar convite desabilitado sem email'</span>, ...)
+    it(<span class="st">'habilita botão Enviar convite ao digitar email válido'</span>, ...)
+    it(<span class="st">'exibe tabela de professores/convites'</span>, ...)
+  });
+
+  context(<span class="st">'Configuração da Escola'</span>, () =&gt; {
+    it(<span class="st">'exibe formulário de configuração da escola'</span>, ...)
+    it(<span class="st">'exibe campos: nome, cidade, estado'</span>, ...)
+    it(<span class="st">'exibe botão Salvar'</span>, ...)
+  });
+
+  context(<span class="st">'Relatórios da Escola'</span>, () =&gt; {
+    it(<span class="st">'exibe página de relatórios'</span>, ...)
+    it(<span class="st">'exibe abas: Coletivo, Por Segmento, Por Professor'</span>, ...)
+  });
+
+  context(<span class="st">'Navegação lateral'</span>, () =&gt; {
+    it(<span class="st">'sidebar exibe os 4 links do gestor'</span>, ...)
+    it(<span class="st">'navega para Equipe ao clicar no link'</span>, ...)
+    it(<span class="st">'navega para Escola ao clicar no link'</span>, ...)
+  });
+});</pre>
+  <table class="data">
+    <tr><th>Context</th><th>Testes</th><th>Requer Auth</th></tr>
+    <tr><td>Redirecionamento sem auth</td><td>1</td><td>Não</td></tr>
+    <tr><td>Página Inicial (Dashboard)</td><td>3</td><td>Sim (gestor)</td></tr>
+    <tr><td>Gestão de Equipe</td><td>8</td><td>Sim (gestor)</td></tr>
+    <tr><td>Configuração da Escola</td><td>3</td><td>Sim (gestor)</td></tr>
+    <tr><td>Relatórios da Escola</td><td>2</td><td>Sim (gestor)</td></tr>
+    <tr><td>Navegação lateral</td><td>3</td><td>Sim (gestor)</td></tr>
+  </table>
+
+  <!-- ── 04-secretaria ── -->
+  <h3 class="sub-title">8.4 Secretaria — cypress/e2e/04-secretaria.cy.ts</h3>
+  <span class="file-path">cypress/e2e/04-secretaria.cy.ts</span>
+  <pre>describe(<span class="st">'Secretaria - Redirecionamento sem autenticação'</span>, () =&gt; {
+  it(<span class="st">'redireciona para login ao acessar rota da secretaria sem auth'</span>, ...)
+});
+
+describe(<span class="st">'Secretaria - Fluxo completo (requer conta real)'</span>, () =&gt; {
+  <span class="fn">beforeEach</span>(() =&gt; { cy.<span class="fn">loginAs</span>(<span class="st">'secretaria'</span>); });
+
+  context(<span class="st">'Visão da Rede (Dashboard)'</span>, () =&gt; {
+    it(<span class="st">'exibe título "Visão da Rede"'</span>, ...)
+    it(<span class="st">'exibe KPI de escolas ativas'</span>, ...)
+    it(<span class="st">'exibe KPI de usuários totais'</span>, ...)
+    it(<span class="st">'exibe KPI de respostas coletadas'</span>, ...)
+    it(<span class="st">'exibe KPI de pontuação média'</span>, ...)
+    it(<span class="st">'exibe seção "Domínios da rede"'</span>, ...)
+    it(<span class="st">'exibe seção "Escolas com menor coleta"'</span>, ...)
+    it(<span class="st">'botão "Ver todas" navega para /escolas'</span>, ...)
+  });
+
+  context(<span class="st">'Gestão de Escolas'</span>, () =&gt; {
+    it(<span class="st">'exibe título da página'</span>, ...)
+    it(<span class="st">'exibe botão "Nova escola"'</span>, ...)
+    it(<span class="st">'abre modal de criação ao clicar em Nova escola'</span>, ...)
+    it(<span class="st">'fecha modal ao clicar em Cancelar'</span>, ...)
+    it(<span class="st">'exibe tabela com colunas: Nome, Cidade, Estado'</span>, ...)
+  });
+
+  context(<span class="st">'Relatórios da Rede'</span>, () =&gt; {
+    it(<span class="st">'exibe página de relatórios'</span>, ...)
+    it(<span class="st">'exibe abas: Rede, Por Escola, Por Professor'</span>, ...)
+    it(<span class="st">'aba Rede está ativa por padrão'</span>, ...)
+    it(<span class="st">'troca para aba Por Escola ao clicar'</span>, ...)
+    it(<span class="st">'troca para aba Por Professor ao clicar'</span>, ...)
+  });
+
+  context(<span class="st">'Administração de Usuários'</span>, () =&gt; {
+    it(<span class="st">'exibe título da página de admin'</span>, ...)
+    it(<span class="st">'exibe campo de busca por nome/email'</span>, ...)
+    it(<span class="st">'exibe filtro por perfil'</span>, ...)
+    it(<span class="st">'tabela exibe colunas de usuários'</span>, ...)
+    it(<span class="st">'filtro por "Professor" retorna apenas professores'</span>, ...)
+  });
+
+  context(<span class="st">'Navegação lateral'</span>, () =&gt; {
+    it(<span class="st">'sidebar exibe os 4 links da secretaria'</span>, ...)
+    it(<span class="st">'navega para Escolas ao clicar no link'</span>, ...)
+  });
+});</pre>
+  <table class="data">
+    <tr><th>Context</th><th>Testes</th><th>Requer Auth</th></tr>
+    <tr><td>Redirecionamento sem auth</td><td>1</td><td>Não</td></tr>
+    <tr><td>Visão da Rede (Dashboard)</td><td>8</td><td>Sim (secretaria)</td></tr>
+    <tr><td>Gestão de Escolas</td><td>5</td><td>Sim (secretaria)</td></tr>
+    <tr><td>Relatórios da Rede</td><td>5</td><td>Sim (secretaria)</td></tr>
+    <tr><td>Administração de Usuários</td><td>5</td><td>Sim (secretaria)</td></tr>
+    <tr><td>Navegação lateral</td><td>2</td><td>Sim (secretaria)</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════════ 9. CYPRESS COMPONENT ══ -->
+<div class="page-break"></div>
+<section id="cypress-component">
+  <h2 class="section-title"><span class="num">9</span> Cypress Component — Testes de Componentes React</h2>
+
+  <p>
+    Os testes de componente montam cada componente isoladamente no browser via
+    <code>cy.mount()</code>, sem precisar de rota ou servidor rodando.
+    São ideais para verificar renderização, props, estados de loading e interações
+    de UI em componentes compartilhados do design system.
+  </p>
+
+  <!-- ── Badge ── -->
+  <h3 class="sub-title">9.1 Badge — cypress/component/Badge.cy.tsx</h3>
+  <span class="file-path">cypress/component/Badge.cy.tsx</span>
+  <pre><span class="kw">import</span> React <span class="kw">from</span> <span class="st">'react'</span>;
+<span class="kw">import</span> { Badge } <span class="kw">from</span> <span class="st">'../../src/components/ui/primitives/Badge'</span>;
+
+describe(<span class="st">'Badge'</span>, () =&gt; {
+  it(<span class="st">'renderiza o texto do label'</span>, () =&gt; {
+    cy.<span class="fn">mount</span>(&lt;Badge label=<span class="st">"Respondido"</span> variant=<span class="st">"success"</span> /&gt;);
+    cy.<span class="fn">contains</span>(<span class="st">'Respondido'</span>).<span class="fn">should</span>(<span class="st">'be.visible'</span>);
+  });
+  it(<span class="st">'variante success aplica cor verde'</span>, ...)
+  it(<span class="st">'variante warning renderiza o label'</span>, ...)
+  it(<span class="st">'variante error renderiza o label'</span>, ...)
+  it(<span class="st">'variante neutral renderiza o label'</span>, ...)
+  it(<span class="st">'variante accent renderiza o label'</span>, ...)
+  it(<span class="st">'aceita labels longos sem quebrar layout'</span>, ...)
+  it(<span class="st">'label vazio renderiza sem erros'</span>, ...)
+});</pre>
+  <table class="data">
+    <tr><th>Caso de Teste</th><th>O que valida</th></tr>
+    <tr><td>Renderiza o texto do label</td><td>Conteúdo visível</td></tr>
+    <tr><td>Variante success aplica cor verde</td><td>CSS color aplicado</td></tr>
+    <tr><td>Variante warning renderiza o label</td><td>Renderização sem crash</td></tr>
+    <tr><td>Variante error renderiza o label</td><td>Renderização sem crash</td></tr>
+    <tr><td>Variante neutral renderiza o label</td><td>Renderização sem crash</td></tr>
+    <tr><td>Variante accent renderiza o label</td><td>Renderização sem crash</td></tr>
+    <tr><td>Aceita labels longos sem quebrar layout</td><td>Overflow / wrapping</td></tr>
+    <tr><td>Label vazio renderiza sem erros</td><td>Edge case — prop vazia</td></tr>
+  </table>
+
+  <!-- ── DataTable ── -->
+  <h3 class="sub-title">9.2 DataTable — cypress/component/DataTable.cy.tsx</h3>
+  <span class="file-path">cypress/component/DataTable.cy.tsx</span>
+  <pre><span class="kw">const</span> columns = [
+  { key: <span class="st">'id'</span>, header: <span class="st">'ID'</span> },
+  { key: <span class="st">'nome'</span>, header: <span class="st">'Nome'</span> },
+  { key: <span class="st">'status'</span>, header: <span class="st">'Status'</span> },
+];
+<span class="kw">const</span> rows = [
+  { id: <span class="nm">1</span>, nome: <span class="st">'Ana Silva'</span>,  status: <span class="st">'Ativo'</span> },
+  { id: <span class="nm">2</span>, nome: <span class="st">'Bruno Lima'</span>, status: <span class="st">'Inativo'</span> },
+  { id: <span class="nm">3</span>, nome: <span class="st">'Carla Melo'</span>, status: <span class="st">'Ativo'</span> },
+];
+
+describe(<span class="st">'DataTable'</span>, () =&gt; {
+  it(<span class="st">'renderiza cabeçalhos de colunas'</span>, ...)
+  it(<span class="st">'renderiza dados das linhas'</span>, ...)
+  it(<span class="st">'exibe estado vazio padrão quando rows = []'</span>, ...)
+  it(<span class="st">'exibe estado vazio customizado quando fornecido'</span>, ...)
+  it(<span class="st">'exibe skeletons de loading quando loading=true'</span>, ...)
+  it(<span class="st">'não exibe estado vazio durante loading'</span>, ...)
+  it(<span class="st">'usa render customizado para células'</span>, ...)
+  it(<span class="st">'exibe paginação quando rows &gt; rowsPerPage'</span>, ...)
+  it(<span class="st">'não exibe paginação quando rows &lt;= rowsPerPage'</span>, ...)
+});</pre>
+  <table class="data">
+    <tr><th>Caso de Teste</th><th>O que valida</th></tr>
+    <tr><td>Renderiza cabeçalhos de colunas</td><td>Prop <code>columns[].header</code></td></tr>
+    <tr><td>Renderiza dados das linhas</td><td>Prop <code>rows[]</code></td></tr>
+    <tr><td>Estado vazio padrão (rows = [])</td><td>Fallback de texto vazio</td></tr>
+    <tr><td>Estado vazio customizado</td><td>Prop <code>emptyState</code></td></tr>
+    <tr><td>Skeletons de loading (loading=true)</td><td>MUI Skeleton visível</td></tr>
+    <tr><td>Sem estado vazio durante loading</td><td>Conflito loading vs. empty</td></tr>
+    <tr><td>Render customizado para células</td><td>Prop <code>columns[].render</code></td></tr>
+    <tr><td>Paginação com rows &gt; rowsPerPage</td><td>Controles de paginação</td></tr>
+    <tr><td>Sem paginação quando rows ≤ rowsPerPage</td><td>Ausência de controles</td></tr>
+  </table>
+
+  <!-- ── ProgressBar ── -->
+  <h3 class="sub-title">9.3 ProgressBar — cypress/component/ProgressBar.cy.tsx</h3>
+  <span class="file-path">cypress/component/ProgressBar.cy.tsx</span>
+  <pre>describe(<span class="st">'ProgressBar'</span>, () =&gt; {
+  it(<span class="st">'renderiza sem erros com valor 0'</span>, ...)
+  it(<span class="st">'renderiza sem erros com valor 100'</span>, ...)
+  it(<span class="st">'renderiza com valor intermediário (50)'</span>, ...)
+  it(<span class="st">'clampeia valor acima de 100 sem erros'</span>, ...)    <span class="cm">// value=150</span>
+  it(<span class="st">'clampeia valor negativo sem erros'</span>, ...)         <span class="cm">// value=-10</span>
+  it(<span class="st">'exibe label quando fornecido'</span>, ...)
+  it(<span class="st">'exibe percentual quando showValue=true'</span>, ...)
+  it(<span class="st">'não exibe percentual quando showValue=false'</span>, ...)
+  it(<span class="st">'exibe label e percentual juntos'</span>, ...)
+});</pre>
+  <table class="data">
+    <tr><th>Caso de Teste</th><th>O que valida</th></tr>
+    <tr><td>value = 0</td><td>Limite inferior</td></tr>
+    <tr><td>value = 100</td><td>Limite superior</td></tr>
+    <tr><td>value = 50</td><td>Valor intermediário</td></tr>
+    <tr><td>value = 150 (clamp)</td><td>Valor acima do máximo</td></tr>
+    <tr><td>value = -10 (clamp)</td><td>Valor negativo</td></tr>
+    <tr><td>Prop label</td><td>Texto de label visível</td></tr>
+    <tr><td>showValue = true</td><td>Exibição do percentual (ex.: "75%")</td></tr>
+    <tr><td>showValue = false (padrão)</td><td>Ausência do percentual</td></tr>
+    <tr><td>label + showValue juntos</td><td>Coexistência das duas props</td></tr>
+  </table>
+
+  <!-- ── StatCard ── -->
+  <h3 class="sub-title">9.4 StatCard — cypress/component/StatCard.cy.tsx</h3>
+  <span class="file-path">cypress/component/StatCard.cy.tsx</span>
+  <pre>describe(<span class="st">'StatCard'</span>, () =&gt; {
+  it(<span class="st">'renderiza label e value'</span>, () =&gt; {
+    cy.<span class="fn">mount</span>(&lt;StatCard label=<span class="st">"Total de escolas"</span> value={<span class="nm">42</span>} /&gt;);
+    cy.<span class="fn">contains</span>(<span class="st">'Total de escolas'</span>).<span class="fn">should</span>(<span class="st">'be.visible'</span>);
+    cy.<span class="fn">contains</span>(<span class="st">'42'</span>).<span class="fn">should</span>(<span class="st">'be.visible'</span>);
+  });
+  it(<span class="st">'renderiza value string'</span>, ...)
+  it(<span class="st">'exibe texto "sub" quando fornecido'</span>, ...)
+  it(<span class="st">'não exibe sub quando loading=true'</span>, ...)
+  it(<span class="st">'exibe skeleton quando loading=true'</span>, ...)
+  it(<span class="st">'não exibe skeleton quando loading=false'</span>, ...)
+  it(<span class="st">'value "—" (placeholder) renderiza sem erros'</span>, ...)
+});</pre>
+  <table class="data">
+    <tr><th>Caso de Teste</th><th>O que valida</th></tr>
+    <tr><td>Renderiza label e value numérico</td><td>Props básicas</td></tr>
+    <tr><td>Value string ("3.8")</td><td>Type flexibility</td></tr>
+    <tr><td>Prop sub (subtexto)</td><td>Texto secundário visível</td></tr>
+    <tr><td>Sub oculto durante loading</td><td>loading=true esconde sub</td></tr>
+    <tr><td>Skeleton quando loading=true</td><td>MUI Skeleton presente</td></tr>
+    <tr><td>Sem skeleton quando loading=false</td><td>Ausência de skeleton</td></tr>
+    <tr><td>Value "—" (placeholder)</td><td>Edge case — valor vazio</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════════ RESUMO ATUALIZADO ══ -->
+<div class="page-break"></div>
+<section id="summary-total">
+  <h2 class="section-title"><span class="num">10</span> Resumo Total — Todos os Testes do Projeto</h2>
+
+  <h3 class="sub-title">Por Camada</h3>
+  <table class="data">
+    <tr><th>Camada</th><th>Framework</th><th>Arquivos</th><th>Suítes</th><th>Testes</th></tr>
+    <tr>
+      <td>Unitários</td>
+      <td>Vitest</td>
+      <td>2</td>
+      <td>10</td>
+      <td><strong>33</strong></td>
+    </tr>
+    <tr>
+      <td>E2E (autenticação)</td>
+      <td>Cypress</td>
+      <td>1</td>
+      <td>3</td>
+      <td><strong>15</strong></td>
+    </tr>
+    <tr>
+      <td>E2E (professor)</td>
+      <td>Cypress</td>
+      <td>1</td>
+      <td>6</td>
+      <td><strong>17</strong></td>
+    </tr>
+    <tr>
+      <td>E2E (gestor)</td>
+      <td>Cypress</td>
+      <td>1</td>
+      <td>6</td>
+      <td><strong>20</strong></td>
+    </tr>
+    <tr>
+      <td>E2E (secretaria)</td>
+      <td>Cypress</td>
+      <td>1</td>
+      <td>6</td>
+      <td><strong>26</strong></td>
+    </tr>
+    <tr>
+      <td>Componentes React</td>
+      <td>Cypress Component</td>
+      <td>4</td>
+      <td>4</td>
+      <td><strong>33</strong></td>
+    </tr>
+  </table>
+
+  <h3 class="sub-title">Métricas Finais</h3>
+  <table class="data">
+    <tr><th>Métrica</th><th>Valor</th></tr>
+    <tr><td><strong>Total geral de testes</strong></td><td><strong>144</strong></td></tr>
+    <tr><td>Testes unitários (Vitest)</td><td>33</td></tr>
+    <tr><td>Testes E2E (Cypress)</td><td>78</td></tr>
+    <tr><td>Testes de componente (Cypress)</td><td>33</td></tr>
+    <tr><td>Arquivos de teste</td><td>10 (2 Vitest + 4 E2E + 4 Component)</td></tr>
+    <tr><td>Perfis cobertos (E2E)</td><td>3 (professor, gestor, secretaria)</td></tr>
+    <tr><td>Testes sem necessidade de auth</td><td>~11 (UI pura)</td></tr>
+    <tr><td>Comandos customizados Cypress</td><td>3 (loginAs, stubFirebaseAuth, waitForPage)</td></tr>
+    <tr><td>Correções aplicadas</td><td>1 bug crítico (makeResponse) + 24 auto-fixes ESLint</td></tr>
+    <tr><td>Regras ESLint ativas</td><td>9 (4 error, 5 warn)</td></tr>
+  </table>
+
+  <div class="callout ok">
+    <strong>Cobertura por perfil:</strong> os testes E2E cobrem os 3 perfis de usuário da plataforma
+    (professor, gestor, secretaria), incluindo navegação lateral, dashboards, formulários modais,
+    tabelas com paginação e fluxo multi-passo do questionário TPACK.
+  </div>
+
+  <div class="callout info">
+    <strong>Testes autenticados vs. sem auth:</strong> os testes E2E foram projetados para rodar
+    em dois modos — os testes de UI pura (sem credenciais) rodam sempre; os testes de fluxo
+    completo pulam graciosamente com <code>cy.log()</code> se <code>cypress.env.json</code>
+    não estiver configurado, sem causar falha no CI.
+  </div>
+</section>
+
+<footer>
+  <span>SELF — Sistema Educacional de Learning e Formação</span>
+  <span>Relatório gerado em 18/06/2026</span>
+</footer>
+
+</body>
+</html>
