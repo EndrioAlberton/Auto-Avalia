@@ -2,7 +2,7 @@
 
 **Projeto:** self-plataforma-educacional  
 **Repositório:** https://github.com/EndrioAlberton/novoprojeto  
-**Versão do documento:** 1.0  
+**Versão do documento:** 1.1  
 **Data:** 22/06/2026  
 **Autor:** Endrio Alberton  
 
@@ -13,6 +13,15 @@
 1. [Visão Geral do Projeto](#1-visão-geral-do-projeto)
 2. [Objetivos dos Testes](#2-objetivos-dos-testes)
 3. [Escopo](#3-escopo)
+4. [Ferramentas](#4-ferramentas)
+5. [Ambiente de Testes](#5-ambiente-de-testes)
+6. [Versionamento dos Testes no Git](#6-versionamento-dos-testes-no-git)
+7. [Procedimentos](#7-procedimentos)
+8. [Requisitos, Restrições e Configurações](#8-requisitos-restrições-e-configurações)
+9. [Casos de Teste Detalhados](#9-casos-de-teste-detalhados)
+10. [Matriz de Funcionalidades × Testes](#10-matriz-de-funcionalidades--testes)
+11. [Análise Estática](#11-análise-estática)
+12. [Resumo e Métricas](#12-resumo-e-métricas)
 4. [Ferramentas](#4-ferramentas)
 5. [Ambiente de Testes](#5-ambiente-de-testes)
 6. [Procedimentos](#6-procedimentos)
@@ -159,7 +168,54 @@ projeto/
 
 ---
 
-## 6. Procedimentos
+## 6. Versionamento dos Testes no Git
+
+Todos os arquivos de teste estão versionados no repositório principal (`main`). Abaixo está o histórico completo de commits do projeto, do mais recente ao mais antigo.
+
+### 6.1 Histórico completo de commits
+
+| Data | Mensagem do commit |
+|---|---|
+| 22/06/2026 | `docs: reescreve plano de testes completo com casos detalhados e matriz` |
+| 22/06/2026 | `docs: adiciona plano de testes e relatório de testes` |
+| 18/06/2026 | `fix: adicionado eslint` |
+| 18/06/2026 | `fix: função definida` |
+| 18/06/2026 | `fix: vercel build` |
+| 18/06/2026 | `fix: separa config do Vitest em vitest.config.ts para não quebrar build do Vite` |
+| 18/06/2026 | `test: adiciona testes unitários com Vitest para analyticsService e userUtils` |
+| 18/06/2026 | `fix: renomeia cypress.config para .cts e adiciona cypress.env.json com credenciais de teste` |
+| 18/06/2026 | `test: adiciona infraestrutura de testes Cypress (E2E + componentes)` |
+| 01/06/2026 | `feat: tooltip por barra e legenda clicável no DomainBarChart` |
+| 01/06/2026 | `fix: adiciona campo segment nas respostas do seed` |
+| 01/06/2026 | `fix: atualiza seed com IDs TPACK e remove módulo de estudantes` |
+| 01/06/2026 | `chore: remove todo o módulo de estudantes e reverte seed.mjs` |
+| 01/06/2026 | `feat: questionário TPACK com 8 domínios e 5 seções de navegação` |
+| 18/05/2026 | `feat: questionário RME-POA, dashboards de estudantes e ajustes de UI` |
+| 14/05/2026 | `fix: erros vercel` |
+| 14/05/2026 | `fix: import to components/ui` |
+| 14/05/2026 | `fix: ajuste import` |
+| 14/05/2026 | `fix: reestrutura UI, seed, regras e limpeza geral de código` |
+| 16/03/2026 | `Atualiza a lógica de carregamento de usuários e escolas, garantindo visibilidade de todos os perfis` |
+| 16/03/2026 | `Renomear referências de "SELF" para "Autoavalia" em documentos e componentes` |
+| 03/03/2026 | `Update Firebase configuration, enhance Firestore rules, and improve user management` |
+| 02/03/2026 | `first commit` |
+
+### 6.2 Como consultar o histórico
+
+```bash
+# Listar todos os commits do projeto
+git log --oneline
+
+# Ver o histórico de um arquivo de teste específico
+git log --oneline -- src/services/analyticsService.test.ts
+git log --oneline -- cypress/e2e/01-auth.cy.ts
+```
+
+---
+
+## 7. Procedimentos
+
+> Esta seção descreve como executar os testes e o fluxo de trabalho para adicionar novos testes ao repositório.
 
 ### 6.1 Execução dos testes
 
@@ -340,7 +396,7 @@ npm run cy:run:component     # testes de componente headless
 
 ---
 
-## 7. Requisitos, Restrições e Configurações
+## 8. Requisitos, Restrições e Configurações
 
 ### 7.1 Configuração do Vitest
 
@@ -471,7 +527,7 @@ O modo `strict` engloba: `strictNullChecks`, `strictFunctionTypes`, `strictPrope
 
 ---
 
-## 8. Casos de Teste Detalhados
+## 9. Casos de Teste Detalhados
 
 ### 8.1 Testes Unitários — `src/utils/userUtils.test.ts`
 
@@ -844,7 +900,7 @@ const rows    = [{ id: 1, nome: 'Ana Silva', status: 'Ativo' }, ...]
 
 ---
 
-## 9. Matriz de Funcionalidades × Testes
+## 10. Matriz de Funcionalidades × Testes
 
 A tabela abaixo mapeia cada funcionalidade do sistema para os testes que a cobrem.
 
@@ -886,7 +942,7 @@ A tabela abaixo mapeia cada funcionalidade do sistema para os testes que a cobre
 
 ---
 
-## 10. Análise Estática
+## 11. Análise Estática
 
 ### 10.1 TypeScript — verificação de tipos
 
@@ -925,7 +981,7 @@ Ao configurar o ESLint pela primeira vez no projeto, foram encontrados:
 
 ---
 
-## 11. Resumo e Métricas
+## 12. Resumo e Métricas
 
 ### 11.1 Totais por camada
 
