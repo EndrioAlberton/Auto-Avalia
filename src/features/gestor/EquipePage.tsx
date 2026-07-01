@@ -23,13 +23,13 @@ import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { createInvitation } from '../../services/firestoreService';
-import { formatFirestoreDate, formatSegment } from '../../services/analyticsService';
+import { formatSegment } from '../../services/analyticsService';
 import { useGestorData } from './hooks/useGestorData';
 import type { User } from '../../types';
 import { colors } from '../../components/ui/tokens';
 
 interface TeacherRow extends User {
-  statusLabel: 'Respondido' | 'Pendente' | 'Convidado';
+  isInvite?: boolean;
 }
 
 export function EquipePage() {
@@ -45,10 +45,7 @@ export function EquipePage() {
 
   const respondedSet = new Set(schoolResponses.map((r: any) => r.userId));
 
-  const teacherRows: TeacherRow[] = teachers.map((t) => ({
-    ...t,
-    statusLabel: (respondedSet.has(t.uid) ? 'Respondido' : 'Pendente') as 'Respondido' | 'Pendente',
-  }));
+  const teacherRows: TeacherRow[] = teachers.map((t) => ({ ...t }));
 
   const inviteRows: TeacherRow[] = invitations.map((inv) => ({
     uid: inv.id,
@@ -57,7 +54,7 @@ export function EquipePage() {
     role: 'professor' as any,
     createdAt: inv.createdAt,
     updatedAt: inv.createdAt,
-    statusLabel: 'Convidado' as const,
+    isInvite: true,
   }));
 
   const allRows = [...teacherRows, ...inviteRows];
@@ -66,21 +63,9 @@ export function EquipePage() {
     { key: 'name', header: 'Nome', render: (r) => r.displayName || r.email },
     { key: 'segment', header: 'Segmento', render: (r) => (r as any).segment?.map(formatSegment).join(', ') || '—' },
     {
-      key: 'status',
+      key: 'invite',
       header: 'Status',
-      render: (r) => (
-        <Badge
-          label={r.statusLabel}
-          variant={r.statusLabel === 'Respondido' ? 'success' : r.statusLabel === 'Convidado' ? 'accent' : 'neutral'}
-        />
-      ),
-    },
-    {
-      key: 'date',
-      header: 'Data de resposta',
-      render: (r) => r.statusLabel === 'Respondido'
-        ? formatFirestoreDate(schoolResponses.find((sr: any) => sr.userId === r.uid)?.completedAt)
-        : '—',
+      render: (r) => r.isInvite ? <Badge label="Convidado" variant="accent" /> : '—',
     },
     {
       key: 'actions',
