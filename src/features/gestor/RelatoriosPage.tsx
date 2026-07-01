@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { DataTable } from '../../components/ui/data-display/DataTable';
+import { MultiSelectFilter } from '../../components/ui/primitives/MultiSelectFilter';
 import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useGestorData } from './hooks/useGestorData';
@@ -20,6 +21,23 @@ import { colors, radius } from '../../components/ui/tokens';
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
   const { loading, school, teachers, schoolResponses, schoolScores } = useGestorData();
+
+  const etapaOptions = useMemo(
+    () => Array.from(new Set(schoolResponses.map((r) => r.segment ?? 'Não informado')))
+      .map((seg) => ({ value: seg, label: formatSegment(seg) })),
+    [schoolResponses],
+  );
+  const [selectedEtapas, setSelectedEtapas] = useState<string[] | null>(null);
+  const activeEtapas = selectedEtapas ?? etapaOptions.map((o) => o.value);
+
+  const areaOptions = useMemo(
+    () => KNOWLEDGE_AREAS.filter((ka) =>
+      teachers.some((t) => ((t as any).subjects ?? []).some((s: string) => SUBJECT_OPTIONS.find((o) => o.value === s)?.area === ka.value)),
+    ),
+    [teachers],
+  );
+  const [selectedAreas, setSelectedAreas] = useState<string[] | null>(null);
+  const activeAreas = selectedAreas ?? areaOptions.map((o) => o.value);
 
   if (loading) {
     return (
@@ -35,7 +53,7 @@ export function RelatoriosPage() {
   const totalCount = teachers.length;
   const pct = totalCount > 0 ? Math.round((respondedCount / totalCount) * 100) : 0;
 
-  // ── Dados por segmento ────────────────────────────────────────────────────
+  // ── Dados por etapa de ensino (filtrados) ─────────────────────────────────
   const hasData = schoolResponses.length > 0;
 
   const barData = DOMAINS.map((d) => ({
@@ -44,13 +62,15 @@ export function RelatoriosPage() {
     escola: schoolScores?.find((s) => s.domain === d.key)?.score ?? 0,
   }));
 
-  const segmentData = groupBySegment(schoolResponses).map((sg) => ({
+  const segmentResponses = schoolResponses.filter((r) => activeEtapas.includes(r.segment ?? 'Não informado'));
+
+  const segmentData = groupBySegment(segmentResponses).map((sg) => ({
     domain: sg.segment,
     label: formatSegment(sg.segment),
     ...Object.fromEntries(DOMAINS.map((d) => [d.key, sg[d.key] ?? 0])),
   }));
 
-  // ── Dados por área do conhecimento ────────────────────────────────────────
+  // ── Dados por área do conhecimento (filtrados) ────────────────────────────
   const teacherSubjectsMap = new Map<string, string[]>();
   for (const t of teachers) {
     teacherSubjectsMap.set(t.uid, (t as any).subjects ?? []);
@@ -71,7 +91,7 @@ export function RelatoriosPage() {
   }
 
   const areaRows = KNOWLEDGE_AREAS
-    .filter((ka) => areaResponsesMap.has(ka.value))
+    .filter((ka) => areaResponsesMap.has(ka.value) && activeAreas.includes(ka.value))
     .map((ka) => {
       const list = areaResponsesMap.get(ka.value)!;
       const avg = responsesToAvgScores(list);
@@ -136,7 +156,7 @@ export function RelatoriosPage() {
         <>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: `1px solid ${colors.hairline}` }}>
             <Tab label="Coletivo" />
-            <Tab label="Por Segmento" />
+            <Tab label="Por Etapa" />
             <Tab label="Por Área" />
           </Tabs>
 
@@ -153,7 +173,17 @@ export function RelatoriosPage() {
 
           {tab === 1 && (
             <Box>
-              <ContentCard title="Pontuação por segmento">
+              <ContentCard
+                title="Pontuação por etapa de ensino"
+                action={
+                  <MultiSelectFilter
+                    label="Etapa de Ensino"
+                    options={etapaOptions}
+                    value={activeEtapas}
+                    onChange={setSelectedEtapas}
+                  />
+                }
+              >
                 <DomainBarChart
                   data={segmentData}
                   keys={DOMAINS.map((d) => d.key)}
@@ -161,10 +191,10 @@ export function RelatoriosPage() {
                 />
               </ContentCard>
               <Box mt={2}>
-                <ContentCard title="Detalhamento por segmento" noPadding>
+                <ContentCard title="Detalhamento por etapa de ensino" noPadding>
                   <DataTable
                     columns={[
-                      { key: 'segment', header: 'Segmento', render: (r: any) => formatSegment(r.segment) },
+                      { key: 'segment', header: 'Etapa de Ensino', render: (r: any) => formatSegment(r.segment) },
                       { key: 'total', header: 'Respostas', render: (r: any) => r.total, align: 'center' },
                       ...DOMAINS.map((d) => ({
                         key: d.key,
@@ -173,7 +203,7 @@ export function RelatoriosPage() {
                         render: (r: any) => r[d.key] ? Number(r[d.key]).toFixed(1) : '—',
                       })),
                     ]}
-                    rows={groupBySegment(schoolResponses)}
+                    rows={groupBySegment(segmentResponses)}
                   />
                 </ContentCard>
               </Box>
@@ -190,7 +220,17 @@ export function RelatoriosPage() {
                 />
               ) : (
                 <>
-                  <ContentCard title="Pontuação por área do conhecimento">
+                  <ContentCard
+                    title="Pontuação por área do conhecimento"
+                    action={
+                      <MultiSelectFilter
+                        label="Área"
+                        options={areaOptions.map((o) => ({ value: o.value, label: o.label }))}
+                        value={activeAreas}
+                        onChange={setSelectedAreas}
+                      />
+                    }
+                  >
                     <DomainBarChart
                       data={areaBarData}
                       keys={DOMAINS.map((d) => d.key)}

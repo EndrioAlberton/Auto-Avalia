@@ -7,12 +7,10 @@ import { StatCard } from '../../components/ui/data-display/StatCard';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { ActionCard } from '../../components/ui/data-display/ActionCard';
 import { ProgressBar } from '../../components/ui/data-display/ProgressBar';
-import { Badge } from '../../components/ui/primitives/Badge';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useGestorData } from './hooks/useGestorData';
 import { DOMAINS } from '../../data/questionnaireData';
 import { colors } from '../../components/ui/tokens';
-import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 
 export function InicioPage() {
@@ -27,9 +25,7 @@ export function InicioPage() {
     );
   }
 
-  const respondedSet = new Set(schoolResponses.map((r: any) => r.userId));
-  const pending = teachers.filter((t) => !respondedSet.has(t.uid));
-  const responded = teachers.filter((t) => respondedSet.has(t.uid));
+  const respondedCount = new Set(schoolResponses.map((r: any) => r.userId)).size;
 
   const barData = schoolScores
     ? DOMAINS.map((d) => ({
@@ -80,18 +76,7 @@ export function InicioPage() {
               </Button>
             }
           >
-            <ProgressBar value={responseRate} label={`${responded.length} de ${teachers.length} professores responderam`} showValue />
-            <Box mt={2} display="flex" flexDirection="column" gap={1}>
-              {[...responded.slice(0, 3), ...pending.slice(0, 2)].map((t) => (
-                <Box key={t.uid} display="flex" alignItems="center" justifyContent="space-between">
-                  <Typography sx={{ fontSize: 13, color: colors.inkMuted }}>{t.displayName}</Typography>
-                  <Badge
-                    label={respondedSet.has(t.uid) ? 'Respondido' : 'Pendente'}
-                    variant={respondedSet.has(t.uid) ? 'success' : 'neutral'}
-                  />
-                </Box>
-              ))}
-            </Box>
+            <ProgressBar value={responseRate} label={`${respondedCount} de ${teachers.length} professores responderam`} showValue />
           </ContentCard>
 
           {schoolScores && (

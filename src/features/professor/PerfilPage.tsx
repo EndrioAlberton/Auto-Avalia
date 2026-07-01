@@ -158,13 +158,13 @@ export function PerfilPage() {
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <FormControl fullWidth>
-                  <InputLabel>Segmento(s) de atuação</InputLabel>
+                  <InputLabel>Etapa(s) de Ensino</InputLabel>
                   <Select
                     multiple
                     name="segment"
                     value={form.segment}
                     onChange={handleChange as any}
-                    input={<OutlinedInput label="Segmento(s) de atuação" />}
+                    input={<OutlinedInput label="Etapa(s) de Ensino" />}
                     renderValue={(selected: string[]) => (
                       <Box display="flex" flexWrap="wrap" gap={0.5}>
                         {selected.map((v) => (

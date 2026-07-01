@@ -61,7 +61,7 @@ export function EquipePage() {
 
   const columns: Column<TeacherRow>[] = [
     { key: 'name', header: 'Nome', render: (r) => r.displayName || r.email },
-    { key: 'segment', header: 'Segmento', render: (r) => (r as any).segment?.map(formatSegment).join(', ') || '—' },
+    { key: 'segment', header: 'Etapa de Ensino', render: (r) => (r as any).segment?.map(formatSegment).join(', ') || '—' },
     {
       key: 'invite',
       header: 'Status',
