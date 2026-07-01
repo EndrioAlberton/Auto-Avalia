@@ -11,9 +11,10 @@ import { DataTable } from '../../components/ui/data-display/DataTable';
 import { Badge } from '../../components/ui/primitives/Badge';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useSecretariaData } from './hooks/useSecretariaData';
-import { DOMAINS } from '../../data/questionnaireData';
+import { DOMAINS, SUBJECT_OPTIONS } from '../../data/questionnaireData';
 import { formatFirestoreDate } from '../../services/analyticsService';
 import { colors } from '../../components/ui/tokens';
+import type { DomainScore } from '../../services/analyticsService';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
@@ -33,12 +34,51 @@ export function RelatoriosPage() {
   const taxaGeral =
     totalProfessores > 0 ? Math.round((totalRespondidos / totalProfessores) * 100) : 0;
 
-  // Dados para o gráfico de escolas
   const schoolBarData = schoolsWithStats.map((s) => ({
     domain: s.id,
     label: s.name.length > 20 ? s.name.slice(0, 20) + '…' : s.name,
     taxa: s.responseRate,
     score: s.avgScore,
+  }));
+
+  // ── Dados por disciplina ──────────────────────────────────────────────────
+  const disciplineAccum: Record<string, { label: string; domainSums: Record<string, number[]>; count: number }> = {};
+
+  for (const t of teachersWithScores) {
+    if (!t.hasResponded || !t.scores) continue;
+    const subjects: string[] = (t as any).subjects ?? [];
+    for (const sub of subjects) {
+      const opt = SUBJECT_OPTIONS.find((o) => o.value === sub);
+      if (!opt) continue;
+      if (!disciplineAccum[sub]) {
+        disciplineAccum[sub] = { label: opt.label, domainSums: {}, count: 0 };
+      }
+      disciplineAccum[sub].count++;
+      for (const { domain, score } of t.scores as DomainScore[]) {
+        if (score <= 0) continue;
+        if (!disciplineAccum[sub].domainSums[domain]) disciplineAccum[sub].domainSums[domain] = [];
+        disciplineAccum[sub].domainSums[domain].push(score);
+      }
+    }
+  }
+
+  const disciplineRows = Object.entries(disciplineAccum)
+    .filter(([_, d]) => d.count > 0)
+    .map(([subValue, d]) => {
+      const entry: Record<string, any> = { subject: subValue, label: d.label, total: d.count };
+      for (const [domain, vals] of Object.entries(d.domainSums)) {
+        entry[domain] = vals.length > 0
+          ? parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2))
+          : 0;
+      }
+      return entry;
+    })
+    .sort((a, b) => b.total - a.total);
+
+  const disciplineBarData = disciplineRows.map((r) => ({
+    domain: r.subject,
+    label: r.label.length > 22 ? r.label.slice(0, 22) + '…' : r.label,
+    ...Object.fromEntries(DOMAINS.map((d) => [d.key, r[d.key] ?? 0])),
   }));
 
   return (
@@ -49,6 +89,7 @@ export function RelatoriosPage() {
         <Tab label="Rede" />
         <Tab label="Por Escola" />
         <Tab label="Por Professor" />
+        <Tab label="Por Disciplina" />
       </Tabs>
 
       {/* ── Rede ── */}
@@ -62,7 +103,6 @@ export function RelatoriosPage() {
             />
           ) : (
             <Box display="flex" flexDirection="column" gap={2}>
-              {/* KPIs da rede */}
               <Box display="flex" gap={2} flexWrap="wrap">
                 {[
                   { label: 'Escolas', value: totalEscolas },
@@ -87,7 +127,6 @@ export function RelatoriosPage() {
                 ))}
               </Box>
 
-              {/* Escolas por taxa de resposta */}
               {schoolsWithStats.length > 0 && (
                 <ContentCard title="Taxa de resposta por escola">
                   <DomainBarChart
@@ -110,7 +149,7 @@ export function RelatoriosPage() {
               { key: 'name', header: 'Escola', render: (r: any) => r.name },
               {
                 key: 'teachers',
-                header: 'Professores',
+                header: 'Responderam',
                 align: 'center' as const,
                 render: (r: any) => `${r.respondedCount}/${r.teachersCount}`,
               },
@@ -212,6 +251,45 @@ export function RelatoriosPage() {
         </ContentCard>
       )}
 
+      {/* ── Por Disciplina ── */}
+      {tab === 3 && (
+        <Box>
+          {disciplineRows.length === 0 ? (
+            <EmptyState
+              icon={<BarChartIcon />}
+              title="Sem dados por disciplina"
+              body="Os professores precisam preencher suas disciplinas de atuação no perfil para que este relatório seja gerado."
+            />
+          ) : (
+            <>
+              <ContentCard title="Pontuação por disciplina">
+                <DomainBarChart
+                  data={disciplineBarData}
+                  keys={DOMAINS.map((d) => d.key)}
+                  keyLabels={Object.fromEntries(DOMAINS.map((d) => [d.key, d.label]))}
+                />
+              </ContentCard>
+              <Box mt={2}>
+                <ContentCard title="Detalhamento por disciplina" noPadding>
+                  <DataTable
+                    columns={[
+                      { key: 'label', header: 'Disciplina', render: (r: any) => r.label },
+                      { key: 'total', header: 'Professores', render: (r: any) => r.total, align: 'center' },
+                      ...DOMAINS.map((d) => ({
+                        key: d.key,
+                        header: d.label,
+                        align: 'center' as const,
+                        render: (r: any) => r[d.key] ? Number(r[d.key]).toFixed(1) : '—',
+                      })),
+                    ]}
+                    rows={disciplineRows}
+                  />
+                </ContentCard>
+              </Box>
+            </>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }
