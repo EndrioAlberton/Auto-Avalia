@@ -18,7 +18,7 @@ import { EvolutionLineChart } from '../analytics/charts/EvolutionLineChart';
 import { useProfessorData } from './hooks/useProfessorData';
 import { DOMAINS } from '../../data/questionnaireData';
 import { formatFirestoreDate } from '../../services/analyticsService';
-import { colors } from '../../components/ui/tokens';
+import { colors, domainColors } from '../../components/ui/tokens';
 
 export function RelatoriosPage() {
   const navigate = useNavigate();
@@ -56,6 +56,7 @@ export function RelatoriosPage() {
   }));
 
   const evolutionDomains = DOMAINS.map((d) => d.label);
+  const DOMAIN_COLOR_LIST = Object.values(domainColors);
 
   return (
     <Box>
@@ -70,9 +71,14 @@ export function RelatoriosPage() {
       {tab === 0 && (
         <Box>
           <Grid container spacing={2} mb={3} alignItems="stretch">
-            {myScores.map((d) => (
-              <Grid key={d.domain} size={{ xs: 6, sm: 4, md: 'auto' }} sx={{ display: 'flex' }}>
-                <StatCard label={d.label} value={d.score.toFixed(1)} />
+            {myScores.map((d, i) => (
+              <Grid key={d.domain} size={{ xs: 6, sm: 4, md: 3 }} sx={{ display: 'flex' }}>
+                <StatCard
+                  label={d.label}
+                  value={d.score.toFixed(1)}
+                  accent={DOMAIN_COLOR_LIST[i % DOMAIN_COLOR_LIST.length]}
+                  scoreMax={5}
+                />
               </Grid>
             ))}
           </Grid>

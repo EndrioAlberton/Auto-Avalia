@@ -35,7 +35,7 @@ const ROLE_VARIANTS: Record<string, 'accent' | 'success' | 'neutral' | 'warning'
 };
 
 export function AdminPage() {
-  const { loading, allUsers } = useSecretariaData();
+  const { loading, allUsers, schools } = useSecretariaData();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
@@ -72,7 +72,11 @@ export function AdminPage() {
     {
       key: 'school',
       header: 'Escola',
-      render: (u) => u.schoolId ? <Typography sx={{ fontSize: 13, color: colors.inkMuted }}>{u.schoolId}</Typography> : '—',
+      render: (u) => {
+        if (!u.schoolId) return '—';
+        const school = schools.find((s) => s.id === u.schoolId);
+        return <Typography sx={{ fontSize: 13, color: colors.inkMuted }}>{school?.name ?? u.schoolId}</Typography>;
+      },
     },
     {
       key: 'date',

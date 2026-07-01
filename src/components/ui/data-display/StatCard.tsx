@@ -8,9 +8,15 @@ interface StatCardProps {
   value: string | number;
   sub?: string;
   loading?: boolean;
+  accent?: string;
+  scoreMax?: number;
 }
 
-export function StatCard({ label, value, sub, loading }: StatCardProps) {
+export function StatCard({ label, value, sub, loading, accent, scoreMax }: StatCardProps) {
+  const numericValue = typeof value === 'number' ? value : parseFloat(String(value));
+  const showBar = accent && scoreMax && !isNaN(numericValue);
+  const pct = showBar ? Math.min(100, (numericValue / scoreMax) * 100) : 0;
+
   return (
     <Box
       sx={{
@@ -18,6 +24,7 @@ export function StatCard({ label, value, sub, loading }: StatCardProps) {
         height: '100%',
         background: colors.surface1,
         border: `1px solid ${colors.hairline}`,
+        borderTop: accent ? `3px solid ${accent}` : `1px solid ${colors.hairline}`,
         borderRadius: `${radius.lg}px`,
         p: 3,
         display: 'flex',
@@ -29,12 +36,13 @@ export function StatCard({ label, value, sub, loading }: StatCardProps) {
     >
       <Typography
         sx={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: colors.inkSubtle,
+          fontSize: 11,
+          fontWeight: 600,
+          color: accent ?? colors.inkSubtle,
           textTransform: 'uppercase',
-          letterSpacing: '0.4px',
-          mb: 1,
+          letterSpacing: '0.5px',
+          mb: 1.5,
+          lineHeight: 1.3,
         }}
       >
         {label}
@@ -46,16 +54,29 @@ export function StatCard({ label, value, sub, loading }: StatCardProps) {
         ) : (
           <Typography
             sx={{
-              fontSize: String(value).length > 10 ? 18 : 28,
-              fontWeight: 600,
+              fontSize: String(value).length > 10 ? 18 : 32,
+              fontWeight: 700,
               color: colors.ink,
-              letterSpacing: '-0.4px',
-              lineHeight: 1.2,
-              wordBreak: 'break-word',
+              letterSpacing: '-0.8px',
+              lineHeight: 1,
             }}
           >
             {value}
           </Typography>
+        )}
+
+        {showBar && !loading && (
+          <Box sx={{ mt: 1.5, height: 3, borderRadius: 9999, background: colors.hairline, overflow: 'hidden' }}>
+            <Box
+              sx={{
+                height: '100%',
+                width: `${pct}%`,
+                background: accent,
+                borderRadius: 9999,
+                transition: `width 600ms ${motion.easing}`,
+              }}
+            />
+          </Box>
         )}
 
         {sub && !loading && (

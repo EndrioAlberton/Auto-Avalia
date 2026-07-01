@@ -227,7 +227,6 @@ export const KNOWLEDGE_AREAS = [
   { value: 'ciencias_natureza', label: 'Ciências da Natureza' },
   { value: 'ciencias_humanas',  label: 'Ciências Humanas' },
   { value: 'ensino_religioso',  label: 'Ensino Religioso' },
-  { value: 'formacao_tecnica',  label: 'Formação Técnica e Profissional' },
   { value: 'educacao_infantil', label: 'Educação Infantil (multidisciplinar)' },
   { value: 'anos_iniciais',     label: 'Anos Iniciais (multidisciplinar)' },
 ];
@@ -249,11 +248,6 @@ export const SUBJECT_OPTIONS: SubjectOption[] = [
   { value: 'filosofia',          label: 'Filosofia',                  area: 'ciencias_humanas' },
   { value: 'sociologia',         label: 'Sociologia',                 area: 'ciencias_humanas' },
   { value: 'ensino_religioso',   label: 'Ensino Religioso',           area: 'ensino_religioso' },
-  { value: 'informatica',        label: 'Informática / Tecnologia',   area: 'formacao_tecnica' },
-  { value: 'administracao',      label: 'Administração',              area: 'formacao_tecnica' },
-  { value: 'contabilidade',      label: 'Contabilidade',              area: 'formacao_tecnica' },
-  { value: 'enfermagem_tec',     label: 'Enfermagem (Técnico)',       area: 'formacao_tecnica' },
-  { value: 'meio_ambiente',      label: 'Meio Ambiente',              area: 'formacao_tecnica' },
   { value: 'multidisciplinar',   label: 'Multidisciplinar',           area: 'anos_iniciais' },
   { value: 'pedagogia_infantil', label: 'Pedagogia / Ed. Infantil',   area: 'educacao_infantil' },
 ];

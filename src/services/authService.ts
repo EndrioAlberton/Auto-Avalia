@@ -14,6 +14,26 @@ import { UserRole } from '../types';
 
 const googleProvider = new GoogleAuthProvider();
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  'auth/invalid-credential':       'Email ou senha incorretos.',
+  'auth/user-not-found':           'Nenhuma conta encontrada com este email.',
+  'auth/wrong-password':           'Senha incorreta.',
+  'auth/invalid-email':            'Email inválido.',
+  'auth/user-disabled':            'Esta conta foi desativada. Entre em contato com o suporte.',
+  'auth/too-many-requests':        'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+  'auth/network-request-failed':   'Erro de conexão. Verifique sua internet.',
+  'auth/email-already-in-use':     'Este email já está em uso.',
+  'auth/weak-password':            'A senha deve ter pelo menos 6 caracteres.',
+  'auth/operation-not-allowed':    'Este método de login não está habilitado.',
+  'auth/popup-closed-by-user':     'Login cancelado. Tente novamente.',
+  'auth/cancelled-popup-request':  'Login cancelado.',
+};
+
+function mapAuthError(error: any): string {
+  const code: string = error?.code ?? '';
+  return AUTH_ERROR_MESSAGES[code] ?? error?.message ?? 'Erro ao fazer login';
+}
+
 // Criar nova conta
 export const signUp = async (
   email: string, 
@@ -48,7 +68,7 @@ export const signUp = async (
 
     return userData as User;
   } catch (error: any) {
-    throw new Error(error.message || 'Erro ao criar conta');
+    throw new Error(mapAuthError(error));
   }
 };
 
@@ -59,7 +79,7 @@ export const signIn = async (email: string, password: string): Promise<User> => 
     const userData = await getUserData(userCredential.user.uid);
     return userData;
   } catch (error: any) {
-    throw new Error(error.message || 'Erro ao fazer login');
+    throw new Error(mapAuthError(error));
   }
 };
 
@@ -95,7 +115,7 @@ export const signInWithGoogle = async (): Promise<User> => {
 
     return userDoc.data() as User;
   } catch (error: any) {
-    throw new Error(error.message || 'Erro ao fazer login com Google');
+    throw new Error(mapAuthError(error));
   }
 };
 

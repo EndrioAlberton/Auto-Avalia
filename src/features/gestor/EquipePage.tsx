@@ -23,7 +23,7 @@ import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { createInvitation } from '../../services/firestoreService';
-import { formatFirestoreDate } from '../../services/analyticsService';
+import { formatFirestoreDate, formatSegment } from '../../services/analyticsService';
 import { useGestorData } from './hooks/useGestorData';
 import type { User } from '../../types';
 import { colors } from '../../components/ui/tokens';
@@ -64,7 +64,7 @@ export function EquipePage() {
 
   const columns: Column<TeacherRow>[] = [
     { key: 'name', header: 'Nome', render: (r) => r.displayName || r.email },
-    { key: 'segment', header: 'Segmento', render: (r) => (r as any).segment?.join(', ') || '—' },
+    { key: 'segment', header: 'Segmento', render: (r) => (r as any).segment?.map(formatSegment).join(', ') || '—' },
     {
       key: 'status',
       header: 'Status',

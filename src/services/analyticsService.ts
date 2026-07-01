@@ -196,6 +196,19 @@ export function overallScore(scores: DomainScore[]): number {
 }
 
 
+const SEGMENT_LABELS: Record<string, string> = {
+  educacao_infantil: 'Educação Infantil',
+  anos_iniciais: 'Anos Iniciais',
+  anos_finais: 'Anos Finais',
+  ensino_medio: 'Ensino Médio',
+  eja: 'EJA',
+  educacao_especial: 'Educação Especial',
+};
+
+export function formatSegment(segment: string): string {
+  return SEGMENT_LABELS[segment] ?? segment.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 /** Formata data do Firestore Timestamp para string legível */
 export function formatFirestoreDate(ts: any): string {
   if (!ts) return '—';

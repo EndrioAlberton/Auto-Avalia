@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   LineChart,
   Line,
@@ -27,6 +28,8 @@ interface EvolutionLineChartProps {
 const DOMAIN_COLOR_LIST = Object.values(domainColors);
 
 export function EvolutionLineChart({ data, domains, loading }: EvolutionLineChartProps) {
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+
   if (loading) return <Skeleton height={260} />;
 
   if (!data || data.length < 2) {
@@ -38,6 +41,16 @@ export function EvolutionLineChart({ data, domains, loading }: EvolutionLineChar
       />
     );
   }
+
+  const toggleDomain = (entry: any) => {
+    const key: string = entry.value ?? entry.dataKey ?? '';
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -65,12 +78,21 @@ export function EvolutionLineChart({ data, domains, loading }: EvolutionLineChar
             fontSize: 13,
           }}
         />
-        <Legend wrapperStyle={{ fontSize: 13, color: colors.inkMuted }} />
+        <Legend
+          wrapperStyle={{ fontSize: 13, color: colors.inkMuted, cursor: 'pointer' }}
+          onClick={toggleDomain}
+          formatter={(value) => (
+            <span style={{ color: hidden.has(value) ? colors.inkTertiary : colors.inkMuted, textDecoration: hidden.has(value) ? 'line-through' : 'none' }}>
+              {value}
+            </span>
+          )}
+        />
         {domains.map((d, i) => (
           <Line
             key={d}
             type="monotone"
             dataKey={d}
+            hide={hidden.has(d)}
             stroke={DOMAIN_COLOR_LIST[i % DOMAIN_COLOR_LIST.length]}
             strokeWidth={2}
             dot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}

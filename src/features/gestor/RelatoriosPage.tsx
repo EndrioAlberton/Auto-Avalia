@@ -8,17 +8,16 @@ import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { DataTable } from '../../components/ui/data-display/DataTable';
-import { Badge } from '../../components/ui/primitives/Badge';
 import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useGestorData } from './hooks/useGestorData';
 import { DOMAINS } from '../../data/questionnaireData';
-import { answersToScores, overallScore, groupBySegment, formatFirestoreDate } from '../../services/analyticsService';
+import { groupBySegment, formatSegment } from '../../services/analyticsService';
 import { colors } from '../../components/ui/tokens';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
-  const { loading, school, teachers, schoolResponses, schoolScores } = useGestorData();
+  const { loading, school, schoolResponses, schoolScores } = useGestorData();
 
   if (loading) {
     return (
@@ -38,31 +37,9 @@ export function RelatoriosPage() {
 
   const segmentData = groupBySegment(schoolResponses).map((sg) => ({
     domain: sg.segment,
-    label: sg.segment,
+    label: formatSegment(sg.segment),
     ...Object.fromEntries(DOMAINS.map((d) => [d.key, sg[d.key] ?? 0])),
   }));
-
-  // Dados por professor
-  const byTeacher = new Map<string, any[]>();
-  for (const r of schoolResponses) {
-    if (!r.userId) continue;
-    if (!byTeacher.has(r.userId)) byTeacher.set(r.userId, []);
-    byTeacher.get(r.userId)!.push(r);
-  }
-
-  const teacherRows = teachers.map((teacher) => {
-    const responses = byTeacher.get(teacher.uid) ?? [];
-    const latest = responses.sort((a: any, b: any) => {
-      return ((b.completedAt as any)?.seconds ?? 0) - ((a.completedAt as any)?.seconds ?? 0);
-    })[0];
-
-    if (!latest) return { teacher, hasResponded: false, scores: null, overall: 0, completedAt: null };
-
-    const map: Record<string, number> = {};
-    for (const a of latest.answers) map[a.questionId] = Number(a.value);
-    const scores = answersToScores(map);
-    return { teacher, hasResponded: true, scores, overall: overallScore(scores), completedAt: latest.completedAt };
-  });
 
   return (
     <Box>
@@ -79,7 +56,6 @@ export function RelatoriosPage() {
           <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: `1px solid ${colors.hairline}` }}>
             <Tab label="Coletivo" />
             <Tab label="Por Segmento" />
-            <Tab label="Por Professor" />
           </Tabs>
 
           {tab === 0 && (
@@ -106,7 +82,7 @@ export function RelatoriosPage() {
                 <ContentCard title="Detalhamento por segmento" noPadding>
                   <DataTable
                     columns={[
-                      { key: 'segment', header: 'Segmento', render: (r: any) => r.segment },
+                      { key: 'segment', header: 'Segmento', render: (r: any) => formatSegment(r.segment) },
                       { key: 'total', header: 'Respostas', render: (r: any) => r.total, align: 'center' },
                       ...DOMAINS.map((d) => ({
                         key: d.key,
@@ -120,60 +96,6 @@ export function RelatoriosPage() {
                 </ContentCard>
               </Box>
             </Box>
-          )}
-
-          {tab === 2 && (
-            <ContentCard title="Avaliação individual dos professores" noPadding>
-              <DataTable
-                columns={[
-                  {
-                    key: 'nome',
-                    header: 'Professor',
-                    render: (r: any) => r.teacher.displayName,
-                  },
-                  ...DOMAINS.map((d) => ({
-                    key: d.key,
-                    header: d.label,
-                    align: 'center' as const,
-                    render: (r: any) => {
-                      if (!r.hasResponded) return <span style={{ color: colors.inkSubtle }}>—</span>;
-                      const score = r.scores?.find((s: any) => s.domain === d.key)?.score ?? 0;
-                      return score > 0 ? score.toFixed(1) : '—';
-                    },
-                  })),
-                  {
-                    key: 'overall',
-                    header: 'Geral',
-                    align: 'center' as const,
-                    render: (r: any) =>
-                      r.hasResponded ? (
-                        <strong style={{ color: colors.accent }}>{r.overall.toFixed(1)}</strong>
-                      ) : (
-                        <span style={{ color: colors.inkSubtle }}>—</span>
-                      ),
-                  },
-                  {
-                    key: 'data',
-                    header: 'Última resposta',
-                    align: 'center' as const,
-                    render: (r: any) =>
-                      r.completedAt ? formatFirestoreDate(r.completedAt) : '—',
-                  },
-                  {
-                    key: 'status',
-                    header: 'Status',
-                    align: 'center' as const,
-                    render: (r: any) => (
-                      <Badge
-                        label={r.hasResponded ? 'Respondeu' : 'Pendente'}
-                        variant={r.hasResponded ? 'success' : 'neutral'}
-                      />
-                    ),
-                  },
-                ]}
-                rows={teacherRows}
-              />
-            </ContentCard>
           )}
         </>
       )}
