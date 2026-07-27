@@ -3,7 +3,9 @@ import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import CircularProgress from '@mui/material/CircularProgress';
+import Button from '@mui/material/Button';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
@@ -14,6 +16,7 @@ import { useSecretariaData } from './hooks/useSecretariaData';
 import { DOMAINS, SUBJECT_OPTIONS } from '../../data/questionnaireData';
 import { formatFirestoreDate } from '../../services/analyticsService';
 import { colors } from '../../components/ui/tokens';
+import { exportCsv } from '../../utils/exportCsv';
 import type { DomainScore } from '../../services/analyticsService';
 
 export function RelatoriosPage() {
@@ -143,7 +146,31 @@ export function RelatoriosPage() {
 
       {/* ── Por Escola ── */}
       {tab === 1 && (
-        <ContentCard title="Pontuação por escola" noPadding>
+        <ContentCard
+          title="Pontuação por escola"
+          noPadding
+          action={
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<FileDownloadIcon fontSize="small" />}
+              onClick={() => exportCsv(
+                'relatorio-escolas',
+                ['Escola', 'Responderam', 'Total', 'Taxa (%)', ...DOMAINS.map((d) => d.label), 'Geral'],
+                schoolsWithStats.map((r: any) => [
+                  r.name,
+                  r.respondedCount,
+                  r.teachersCount,
+                  r.responseRate,
+                  ...DOMAINS.map((d) => r.avgScores?.find((s: any) => s.domain === d.key)?.score?.toFixed(1) ?? ''),
+                  r.avgScore > 0 ? r.avgScore.toFixed(1) : '',
+                ]),
+              )}
+            >
+              Exportar CSV
+            </Button>
+          }
+        >
           <DataTable
             columns={[
               { key: 'name', header: 'Escola', render: (r: any) => r.name },
@@ -193,7 +220,31 @@ export function RelatoriosPage() {
 
       {/* ── Por Professor ── */}
       {tab === 2 && (
-        <ContentCard title="Avaliação individual — toda a rede" noPadding>
+        <ContentCard
+          title="Avaliação individual — toda a rede"
+          noPadding
+          action={
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<FileDownloadIcon fontSize="small" />}
+              onClick={() => exportCsv(
+                'relatorio-professores',
+                ['Professor', 'Escola', ...DOMAINS.map((d) => d.label), 'Geral', 'Data', 'Status'],
+                teachersWithScores.map((r: any) => [
+                  r.displayName,
+                  r.schoolName,
+                  ...DOMAINS.map((d) => r.scores?.find((s: any) => s.domain === d.key)?.score?.toFixed(1) ?? ''),
+                  r.hasResponded ? r.overall.toFixed(1) : '',
+                  r.completedAt ? formatFirestoreDate(r.completedAt) : '',
+                  r.hasResponded ? 'Respondeu' : 'Pendente',
+                ]),
+              )}
+            >
+              Exportar CSV
+            </Button>
+          }
+        >
           {teachersWithScores.length === 0 ? (
             <EmptyState
               icon={<BarChartIcon />}
@@ -270,7 +321,28 @@ export function RelatoriosPage() {
                 />
               </ContentCard>
               <Box mt={2}>
-                <ContentCard title="Detalhamento por disciplina" noPadding>
+                <ContentCard
+                  title="Detalhamento por disciplina"
+                  noPadding
+                  action={
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<FileDownloadIcon fontSize="small" />}
+                      onClick={() => exportCsv(
+                        'relatorio-disciplinas',
+                        ['Disciplina', 'Professores', ...DOMAINS.map((d) => d.label)],
+                        disciplineRows.map((r: any) => [
+                          r.label,
+                          r.total,
+                          ...DOMAINS.map((d) => r[d.key] ? Number(r[d.key]).toFixed(1) : ''),
+                        ]),
+                      )}
+                    >
+                      Exportar CSV
+                    </Button>
+                  }
+                >
                   <DataTable
                     columns={[
                       { key: 'label', header: 'Disciplina', render: (r: any) => r.label },

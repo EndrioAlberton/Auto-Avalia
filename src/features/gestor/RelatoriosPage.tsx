@@ -4,8 +4,10 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PeopleIcon from '@mui/icons-material/People';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
@@ -16,6 +18,7 @@ import { useGestorData } from './hooks/useGestorData';
 import { DOMAINS, KNOWLEDGE_AREAS, SUBJECT_OPTIONS } from '../../data/questionnaireData';
 import { groupBySegment, formatSegment, responsesToAvgScores } from '../../services/analyticsService';
 import { colors, radius } from '../../components/ui/tokens';
+import { exportCsv } from '../../utils/exportCsv';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
@@ -161,7 +164,28 @@ export function RelatoriosPage() {
                 />
               </ContentCard>
               <Box mt={2}>
-                <ContentCard title="Detalhamento por segmento" noPadding>
+                <ContentCard
+                  title="Detalhamento por segmento"
+                  noPadding
+                  action={
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<FileDownloadIcon fontSize="small" />}
+                      onClick={() => exportCsv(
+                        'relatorio-segmento',
+                        ['Segmento', 'Respostas', ...DOMAINS.map((d) => d.label)],
+                        groupBySegment(schoolResponses).map((r) => [
+                          formatSegment(r.segment),
+                          r.total,
+                          ...DOMAINS.map((d) => r[d.key] ? Number(r[d.key]).toFixed(1) : ''),
+                        ]),
+                      )}
+                    >
+                      Exportar CSV
+                    </Button>
+                  }
+                >
                   <DataTable
                     columns={[
                       { key: 'segment', header: 'Segmento', render: (r: any) => formatSegment(r.segment) },
@@ -198,7 +222,28 @@ export function RelatoriosPage() {
                     />
                   </ContentCard>
                   <Box mt={2}>
-                    <ContentCard title="Detalhamento por área" noPadding>
+                    <ContentCard
+                      title="Detalhamento por área"
+                      noPadding
+                      action={
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<FileDownloadIcon fontSize="small" />}
+                          onClick={() => exportCsv(
+                            'relatorio-area',
+                            ['Área do Conhecimento', 'Respostas', ...DOMAINS.map((d) => d.label)],
+                            areaRows.map((r) => [
+                              r.label,
+                              r.total,
+                              ...DOMAINS.map((d) => r[d.key] ? Number(r[d.key]).toFixed(1) : ''),
+                            ]),
+                          )}
+                        >
+                          Exportar CSV
+                        </Button>
+                      }
+                    >
                       <DataTable
                         columns={[
                           { key: 'label', header: 'Área do conhecimento', render: (r: any) => r.label },

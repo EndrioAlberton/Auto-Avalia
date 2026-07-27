@@ -5,7 +5,9 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Grid from '@mui/material/Grid2';
 import CircularProgress from '@mui/material/CircularProgress';
+import Button from '@mui/material/Button';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { StatCard } from '../../components/ui/data-display/StatCard';
@@ -19,6 +21,7 @@ import { useProfessorData } from './hooks/useProfessorData';
 import { DOMAINS } from '../../data/questionnaireData';
 import { formatFirestoreDate } from '../../services/analyticsService';
 import { colors, domainColors } from '../../components/ui/tokens';
+import { exportCsv } from '../../utils/exportCsv';
 
 export function RelatoriosPage() {
   const navigate = useNavigate();
@@ -140,7 +143,27 @@ export function RelatoriosPage() {
                 />
               </ContentCard>
               <Box mt={2}>
-                <ContentCard title="Detalhamento por domínio" noPadding>
+                <ContentCard
+                  title="Detalhamento por domínio"
+                  noPadding
+                  action={
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<FileDownloadIcon fontSize="small" />}
+                      onClick={() => exportCsv(
+                        'relatorio-comparacao',
+                        ['Domínio', 'Minha pontuação', 'Média escola', 'Diferença'],
+                        comparisonData.map((r) => {
+                          const escola = (r as any).escola ?? r.minha;
+                          return [r.label, r.minha.toFixed(1), escola.toFixed(1), (r.minha - escola).toFixed(1)];
+                        }),
+                      )}
+                    >
+                      Exportar CSV
+                    </Button>
+                  }
+                >
                   <DataTable
                     columns={[
                       { key: 'domain', header: 'Domínio', render: (r: typeof comparisonData[0]) => r.label },
@@ -173,7 +196,28 @@ export function RelatoriosPage() {
           </ContentCard>
           {myResponses.length >= 2 && (
             <Box mt={2}>
-              <ContentCard title="Histórico de avaliações" noPadding>
+              <ContentCard
+                title="Histórico de avaliações"
+                noPadding
+                action={
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon fontSize="small" />}
+                    onClick={() => exportCsv(
+                      'historico-avaliacoes',
+                      ['Data', 'Pontuação geral'],
+                      myResponses.map((r: any) => {
+                        const vals = (r.answers as any[]).map((a) => Number(a.value)).filter((v) => v > 0);
+                        const avg = vals.length > 0 ? (vals.reduce((a: number, b: number) => a + b, 0) / vals.length).toFixed(1) : '';
+                        return [formatFirestoreDate(r.completedAt), avg];
+                      }),
+                    )}
+                  >
+                    Exportar CSV
+                  </Button>
+                }
+              >
                 <DataTable
                   columns={[
                     { key: 'date', header: 'Data', render: (r: any) => formatFirestoreDate(r.completedAt) },
