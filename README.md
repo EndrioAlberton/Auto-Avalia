@@ -2,6 +2,31 @@
 
 Plataforma web de autoavaliação e diagnóstico pedagógico. Professores respondem questionários sobre suas práticas, gestores acompanham a equipe, estudantes fornecem feedback anônimo e a secretaria gerencia a rede de escolas.
 
+Este projeto faz parte do **Inovação Pedagógica na Educação Básica** (Edital INOVA EAD CAPES/2023).
+
+---
+
+## 🏛️ Instituição
+
+**Instituto Federal de Educação, Ciência e Tecnologia do Rio Grande do Sul**  
+Campus Porto Alegre
+
+---
+
+## 👥 Colaboradores
+
+### Coordenação
+- **Carine Bueira Loureiro**
+
+### Colaboradora
+- **Silvia de Castro Bertagnolli**
+
+### Desenvolvimento
+- **Endrio Alberton Correa Nunes**  
+  Contato: endrio@maxiquim.com.br
+
+---
+
 ## Stack
 
 | Camada | Tecnologia |
