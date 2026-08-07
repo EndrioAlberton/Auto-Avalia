@@ -16,7 +16,7 @@ import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
-import { getAllSchools, updateUserProfile } from '../../services/firestoreService';
+import { getSchool, updateUserProfile } from '../../services/firestoreService';
 import { SUBJECT_OPTIONS } from '../../data/questionnaireData';
 import { colors } from '../../components/ui/tokens';
 import { initials } from '../../utils/userUtils';
@@ -34,21 +34,25 @@ export function PerfilPage() {
   const { currentUser, refreshUser } = useAuth();
   const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
+  const [schoolName, setSchoolName] = useState<string | null>(null);
   const [form, setForm] = useState({
     displayName: currentUser?.displayName ?? '',
     segment: (currentUser as any)?.segment ?? [] as string[],
     subjects: (currentUser as any)?.subjects ?? [] as string[],
     classes: ((currentUser as any)?.classes ?? []).join(', '),
-    schoolId: currentUser?.schoolId ?? '',
   });
   const [dirty, setDirty] = useState(false);
 
+  // A escola é definida pelo convite do gestor, não pelo professor — aqui é só leitura.
   useEffect(() => {
-    getAllSchools()
-      .then((list) => setSchools(list.map((s) => ({ id: s.id, name: s.name }))))
-      .catch(() => {});
-  }, []);
+    if (!currentUser?.schoolId) {
+      setSchoolName(null);
+      return;
+    }
+    getSchool(currentUser.schoolId)
+      .then((s) => setSchoolName(s.name))
+      .catch(() => setSchoolName(currentUser.schoolId ?? null));
+  }, [currentUser?.schoolId]);
 
   const handleChange = (e: React.ChangeEvent<{ name?: string; value: unknown }>) => {
     const { name, value } = e.target as HTMLInputElement;
@@ -60,9 +64,9 @@ export function PerfilPage() {
     if (!currentUser) return;
     setSaving(true);
     try {
+      // `schoolId` fica fora de propósito: só o aceite de convite pode gravá-lo.
       await updateUserProfile(currentUser.uid, {
         displayName: form.displayName,
-        schoolId: form.schoolId || undefined,
         subjects: form.subjects,
         segment: form.segment,
         classes: form.classes ? form.classes.split(',').map((s: string) => s.trim()) : [],
@@ -136,15 +140,18 @@ export function PerfilPage() {
           <ContentCard title="Dados Profissionais">
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Escola</InputLabel>
-                  <Select name="schoolId" value={form.schoolId} onChange={handleChange as any} label="Escola">
-                    <MenuItem value="">— Selecione ou aceite um convite —</MenuItem>
-                    {schools.map((s) => (
-                      <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <TextField
+                  fullWidth
+                  label="Escola"
+                  value={schoolName ?? ''}
+                  disabled
+                  placeholder="Nenhuma escola vinculada"
+                  helperText={
+                    schoolName
+                      ? 'Definida pelo convite do gestor'
+                      : 'Peça um convite ao gestor da sua escola'
+                  }
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField

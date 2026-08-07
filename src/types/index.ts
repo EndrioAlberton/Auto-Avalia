@@ -184,6 +184,9 @@ export interface Invitation {
   invitedBy: string;
   status: 'pending' | 'accepted' | 'expired';
   token: string;
+  message?: string;
+  /** Definido quando o convidado abre o app e vê o convite — indica que ele já tem conta. */
+  viewedAt?: Date;
   createdAt: Date;
   expiresAt: Date;
 }

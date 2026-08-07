@@ -7,6 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
@@ -22,14 +23,17 @@ import { Badge } from '../../components/ui/primitives/Badge';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
-import { createInvitation } from '../../services/firestoreService';
+import { createInvitation, deleteInvitation } from '../../services/firestoreService';
 import { formatSegment } from '../../services/analyticsService';
 import { useGestorData } from './hooks/useGestorData';
 import type { User } from '../../types';
+import { UserRole } from '../../types';
 import { colors } from '../../components/ui/tokens';
 
 interface TeacherRow extends User {
   isInvite?: boolean;
+  /** Só em linhas de convite: indica que o convidado já abriu o app e viu o convite. */
+  inviteViewed?: boolean;
 }
 
 export function EquipePage() {
@@ -41,7 +45,8 @@ export function EquipePage() {
   const [inviteMsg, setInviteMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [menuTarget, setMenuTarget] = useState<string | null>(null);
+  const [menuTarget, setMenuTarget] = useState<TeacherRow | null>(null);
+  const [acting, setActing] = useState(false);
 
   const respondedSet = new Set(schoolResponses.map((r: any) => r.userId));
 
@@ -51,10 +56,11 @@ export function EquipePage() {
     uid: inv.id,
     email: inv.email,
     displayName: inv.email,
-    role: 'professor' as any,
+    role: UserRole.PROFESSOR,
     createdAt: inv.createdAt,
     updatedAt: inv.createdAt,
     isInvite: true,
+    inviteViewed: Boolean(inv.viewedAt),
   }));
 
   const allRows = [...teacherRows, ...inviteRows];
@@ -65,45 +71,49 @@ export function EquipePage() {
     {
       key: 'invite',
       header: 'Status',
-      render: (r) => r.isInvite ? <Badge label="Convidado" variant="accent" /> : '—',
+      render: (r) => {
+        if (!r.isInvite) return '—';
+        // O gestor não consegue ler o documento de quem ainda não é da escola dele,
+        // então "já tem conta?" vem do próprio convite, via viewedAt.
+        return r.inviteViewed
+          ? <Badge label="Convite visto" variant="warning" />
+          : <Badge label="Aguardando cadastro" variant="neutral" />;
+      },
     },
     {
       key: 'actions',
       header: '',
       align: 'right',
       render: (r) => (
-        <>
-          <IconButton
-            size="small"
-            onClick={(e) => { setMenuAnchor(e.currentTarget); setMenuTarget(r.uid); }}
-            sx={{ color: colors.inkSubtle }}
-          >
-            <MoreHorizIcon fontSize="small" />
-          </IconButton>
-          <Menu
-            anchorEl={menuTarget === r.uid ? menuAnchor : null}
-            open={menuTarget === r.uid && Boolean(menuAnchor)}
-            onClose={() => { setMenuAnchor(null); setMenuTarget(null); }}
-            PaperProps={{ sx: { background: colors.surface2, border: `1px solid ${colors.hairline}` } }}
-          >
-            <MenuItem sx={{ fontSize: 13, color: colors.ink }}>Reenviar convite</MenuItem>
-            <MenuItem sx={{ fontSize: 13, color: colors.error }}>Remover</MenuItem>
-          </Menu>
-        </>
+        <IconButton
+          size="small"
+          onClick={(e) => { setMenuAnchor(e.currentTarget); setMenuTarget(r); }}
+          sx={{ color: colors.inkSubtle }}
+        >
+          <MoreHorizIcon fontSize="small" />
+        </IconButton>
       ),
     },
   ];
+
+  const closeMenu = () => { setMenuAnchor(null); setMenuTarget(null); };
+
+  const sendInvite = async (email: string, message: string) => {
+    if (!currentUser?.schoolId) return;
+    await createInvitation({
+      email,
+      role: UserRole.PROFESSOR,
+      schoolId: currentUser.schoolId,
+      invitedBy: currentUser.uid,
+      message,
+    });
+  };
 
   const handleInvite = async () => {
     if (!currentUser?.schoolId || !inviteEmail.trim()) return;
     setSending(true);
     try {
-      await createInvitation({
-        email: inviteEmail.trim(),
-        schoolId: currentUser.schoolId,
-        invitedBy: currentUser.uid,
-        message: inviteMsg,
-      } as any);
+      await sendInvite(inviteEmail.trim(), inviteMsg);
       toast.success(`Convite enviado para ${inviteEmail}`);
       setInviteEmail('');
       setInviteMsg('');
@@ -113,6 +123,38 @@ export function EquipePage() {
       toast.error('Erro ao enviar convite. Tente novamente.');
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!menuTarget?.isInvite) return;
+    setActing(true);
+    try {
+      // O convite tem ID determinístico (escola + e-mail), então reenviar
+      // sobrescreve o mesmo documento, renovando token e validade.
+      await sendInvite(menuTarget.email, '');
+      toast.success(`Convite reenviado para ${menuTarget.email}`);
+      closeMenu();
+      refreshData();
+    } catch {
+      toast.error('Erro ao reenviar o convite.');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const handleRemoveInvite = async () => {
+    if (!menuTarget?.isInvite) return;
+    setActing(true);
+    try {
+      await deleteInvitation(menuTarget.uid);
+      toast.success('Convite removido.');
+      closeMenu();
+      refreshData();
+    } catch {
+      toast.error('Erro ao remover o convite.');
+    } finally {
+      setActing(false);
     }
   };
 
@@ -162,6 +204,29 @@ export function EquipePage() {
         />
       </ContentCard>
 
+      {/* Menu único, fora do renderer da coluna — evita montar um portal por linha */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor && menuTarget)}
+        onClose={closeMenu}
+        PaperProps={{ sx: { background: colors.surface2, border: `1px solid ${colors.hairline}` } }}
+      >
+        {menuTarget?.isInvite ? (
+          [
+            <MenuItem key="resend" onClick={handleResend} disabled={acting} sx={{ fontSize: 13, color: colors.ink }}>
+              Reenviar convite
+            </MenuItem>,
+            <MenuItem key="remove" onClick={handleRemoveInvite} disabled={acting} sx={{ fontSize: 13, color: colors.error }}>
+              Remover convite
+            </MenuItem>,
+          ]
+        ) : (
+          <MenuItem disabled sx={{ fontSize: 13, color: colors.inkSubtle }}>
+            Nenhuma ação disponível
+          </MenuItem>
+        )}
+      </Menu>
+
       <Dialog
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
@@ -170,6 +235,10 @@ export function EquipePage() {
         <DialogTitle sx={{ color: colors.ink }}>Convidar professor</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
+            <Typography sx={{ fontSize: 13, color: colors.inkMuted, lineHeight: 1.5 }}>
+              O professor precisa criar uma conta com este mesmo e-mail para receber o convite.
+              Enquanto isso não acontecer, a linha ficará como "Aguardando cadastro".
+            </Typography>
             <TextField
               fullWidth
               label="Email"

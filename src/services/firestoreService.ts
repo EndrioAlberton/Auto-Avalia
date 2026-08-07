@@ -26,6 +26,9 @@ import {
   UserRole
 } from '../types';
 import { PROFESSOR_QUESTIONS, DEFAULT_SUPPORT_MATERIALS } from '../data/questionnaireData';
+import { invitationId } from '../utils/invitationUtils';
+
+export { invitationId };
 
 // ── Utilitário: remove campos undefined antes de salvar no Firestore ──────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -347,19 +350,24 @@ export const getNetworkResponses = async (networkId: string): Promise<Questionna
 export const createInvitation = async (
   data: Omit<Invitation, 'id' | 'createdAt' | 'expiresAt' | 'token' | 'status'>,
 ): Promise<string> => {
-  const ref = doc(collection(db, 'invitations'));
+  const email = data.email.trim().toLowerCase();
+  const id = invitationId(data.schoolId, email);
+  const ref = doc(db, 'invitations', id);
   const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
+  // ID determinístico: reconvidar o mesmo e-mail sobrescreve em vez de duplicar,
+  // renovando token e validade.
   await setDoc(ref, stripUndefined({
     ...data,
+    email,
     token,
     status: 'pending',
     createdAt: serverTimestamp(),
     expiresAt: Timestamp.fromDate(expiresAt),
   }));
-  return ref.id;
+  return id;
 };
 
 export const getSchoolInvitations = async (schoolId: string): Promise<Invitation[]> => {
@@ -396,23 +404,25 @@ export const acceptInvitation = async (id: string): Promise<void> => {
   await updateDoc(doc(db, 'invitations', id), { status: 'accepted' });
 };
 
+/**
+ * Marca que o convidado já viu o convite — é como o gestor distingue "a pessoa
+ * ainda não criou conta" de "criou mas não aceitou". O gestor não consegue ler o
+ * documento de um usuário que ainda não é da escola dele, então a informação
+ * precisa morar no próprio convite.
+ */
+export const markInvitationViewed = async (id: string): Promise<void> => {
+  await updateDoc(doc(db, 'invitations', id), { viewedAt: serverTimestamp() });
+};
+
 /** Convites pendentes para um e-mail específico (para o professor ver na home) */
 export const getPendingInvitationsByEmail = async (email: string): Promise<Invitation[]> => {
-  try {
-    const q = query(
-      collection(db, 'invitations'),
-      where('email', '==', email),
-      where('status', '==', 'pending'),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invitation));
-  } catch {
-    // Fallback sem índice composto
-    const snap = await getDocs(collection(db, 'invitations'));
-    return snap.docs
-      .map(d => ({ id: d.id, ...d.data() } as Invitation))
-      .filter(i => i.email === email && i.status === 'pending');
-  }
+  const q = query(
+    collection(db, 'invitations'),
+    where('email', '==', email.trim().toLowerCase()),
+    where('status', '==', 'pending'),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Invitation));
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

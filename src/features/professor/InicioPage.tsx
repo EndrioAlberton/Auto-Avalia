@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
@@ -10,7 +11,7 @@ import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { useProfessorData } from './hooks/useProfessorData';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
-import { acceptInvitation, updateUserProfile } from '../../services/firestoreService';
+import { acceptInvitation, markInvitationViewed, updateUserProfile } from '../../services/firestoreService';
 import { colors } from '../../components/ui/tokens';
 
 export function InicioPage() {
@@ -19,6 +20,18 @@ export function InicioPage() {
   const toast = useToast();
   const { loading, pendingInvitations, schoolNames, hasResponded, myScores, overallScore, myResponses, strengths, improvements, refreshData } =
     useProfessorData();
+
+  // Sinaliza ao gestor que este convite chegou a alguém com conta. Sem isso ele
+  // não distingue "ainda não se cadastrou" de "cadastrou mas não aceitou".
+  // Antes do early return de loading para não quebrar a ordem dos hooks.
+  useEffect(() => {
+    for (const inv of pendingInvitations) {
+      if (inv.viewedAt) continue;
+      markInvitationViewed(inv.id).catch(() => {
+        /* silencioso: é um sinal auxiliar, não deve atrapalhar a tela */
+      });
+    }
+  }, [pendingInvitations]);
 
   if (loading) {
     return (
