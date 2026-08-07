@@ -2,17 +2,28 @@
  * Autoavalia — Seed Completo
  *
  * O que faz:
- *   1. Garante que todos os usuários existem no Firebase Auth + Firestore
- *   2. Limpa coleções: schools, questionnaires, responses,
- *      anonymous_responses, support_materials, invitations
- *   3. Cria 1 escola vinculando gestor + 5 professores
- *   4. Cria questionários de professor e estudante
- *   5. Cria respostas completas de cada professor (Ana tem 2 = evolução)
- *   6. Cria 20 respostas anônimas de estudantes com perfis variados
- *   7. Cria materiais de apoio
+ *   1.  Garante que todos os usuários existem no Firebase Auth + Firestore
+ *       (sempre como professor — é o único cargo que o autocadastro permite)
+ *   1b. Autentica como admin e atribui os cargos reais (secretaria, gestor)
+ *   2.  Limpa coleções: schools, questionnaires, responses,
+ *       support_materials, invitations
+ *   3.  Cria 1 escola vinculando gestor + 5 professores
+ *   4.  Cria questionários de professor e estudante
+ *   5.  Cria respostas completas de cada professor (Ana tem 2 = evolução)
+ *   7.  Cria materiais de apoio
  *
  * Como usar:
  *   npm run seed
+ *
+ * ⚠️  PRÉ-REQUISITO EM PROJETO NOVO (uma única vez):
+ *   As regras do Firestore só permitem autocadastro como `professor`, e ninguém
+ *   pode alterar o próprio cargo. Nenhum caminho pelo SDK cliente consegue,
+ *   portanto, criar o primeiro admin.
+ *
+ *   Rode `npm run seed` uma vez (vai parar na Fase 1b com instruções), abra o
+ *   console do Firebase → Firestore → coleção `users` → documento de
+ *   admin@self.edu.br e defina `role: "admin"`. Depois rode o seed de novo.
+ *   A partir daí ele é idempotente.
  *
  * Logins gerados (senha: Self@2025):
  *   admin@self.edu.br        — Admin Sistema        (role: admin)
@@ -301,9 +312,13 @@ async function clearCollection(db, name) {
   console.log(`   🗑️  ${name}: ${snap.docs.length} doc(s) removidos`);
 }
 
+const ADMIN_EMAIL = 'admin@self.edu.br';
+
 // Cria ou faz login — retorna uid. Cria/atualiza doc Firestore do próprio usuário.
+// Nunca grava o cargo real: as regras só aceitam autocadastro como professor e
+// proíbem o usuário de alterar o próprio cargo. Os cargos reais vêm na Fase 1b.
 async function ensureUser(auth, db, userData) {
-  const { email, displayName, ...rest } = userData;
+  const { email, displayName, role: _targetRole, ...rest } = userData;
   let uid;
 
   try {
@@ -323,9 +338,16 @@ async function ensureUser(auth, db, userData) {
   const payload = { ...rest, uid, email, displayName };
 
   if (snap.exists()) {
+    // `role` fora do payload de propósito — reescrevê-lo aqui seria o próprio
+    // usuário alterando seu cargo, e as regras negam.
     await updateDoc(ref, { ...payload, updatedAt: serverTimestamp() });
   } else {
-    await setDoc(ref, { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    await setDoc(ref, {
+      ...payload,
+      role: 'professor',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
   }
 
   console.log(`→ ${uid.slice(0, 8)}…`);
@@ -335,7 +357,7 @@ async function ensureUser(auth, db, userData) {
 // ── Fases ─────────────────────────────────────────────────────────────────────
 
 async function phase1_users(auth, db) {
-  console.log('\n👥  FASE 1 — Usuários');
+  console.log('\n👥  FASE 1 — Usuários (todos como professor)');
   const uids = {};
   for (const u of USERS) {
     process.stdout.write(`   [${u.role.padEnd(10)}] ${u.email.padEnd(30)} `);
@@ -344,11 +366,56 @@ async function phase1_users(auth, db) {
   return uids;
 }
 
-async function phase2_clean(auth, db) {
-  console.log('\n🧹  FASE 2 — Limpeza (autenticando como admin)');
-  await signInWithEmailAndPassword(auth, 'admin@self.edu.br', PASSWORD);
+// Autentica como admin e confirma que ele realmente tem o cargo. Sem isso o
+// resto do seed falharia com PERMISSION_DENIED sem explicar o motivo.
+async function signInAsAdmin(auth, db) {
+  const cred = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, PASSWORD);
+  const snap = await getDoc(doc(db, 'users', cred.user.uid));
+  const role = snap.exists() ? snap.data().role : null;
+
+  if (role !== 'admin') {
+    console.error(`
+❌  Bootstrap pendente.
+
+    As regras do Firestore só permitem autocadastro como "professor", e ninguém
+    pode alterar o próprio cargo — então o primeiro admin precisa ser definido
+    manualmente, uma única vez:
+
+      1. Console do Firebase → Firestore Database
+      2. Coleção "users" → documento ${cred.user.uid}
+         (é o ${ADMIN_EMAIL}, cargo atual: ${role ?? 'nenhum'})
+      3. Defina o campo  role = "admin"
+      4. Rode "npm run seed" de novo
+
+    A partir daí o seed roda de ponta a ponta quantas vezes quiser.
+`);
+    process.exit(1);
+  }
+
+  return cred.user.uid;
+}
+
+async function phase1b_roles(auth, db, uids) {
+  console.log('\n🎓  FASE 1b — Cargos (autenticando como admin)');
+  await signInAsAdmin(auth, db);
   console.log('   ✅ Autenticado como admin');
 
+  // O admin não aparece aqui: ninguém altera o próprio cargo (ver signInAsAdmin).
+  const elevated = USERS.filter((u) => u.role !== 'professor' && u.email !== ADMIN_EMAIL);
+  for (const u of elevated) {
+    await updateDoc(doc(db, 'users', uids[u.email]), {
+      role: u.role,
+      updatedAt: serverTimestamp(),
+    });
+    console.log(`   🎖️  ${u.email.padEnd(30)} → ${u.role}`);
+  }
+}
+
+async function phase2_clean(db) {
+  console.log('\n🧹  FASE 2 — Limpeza');
+
+  // anonymous_responses fica de fora: nenhuma fase as recria, então limpá-las
+  // seria perda de dados. O comentário no topo do arquivo já mentia sobre isso.
   const cols = ['schools','questionnaires','responses','support_materials','invitations'];
   for (const c of cols) await clearCollection(db, c);
 }
@@ -462,7 +529,8 @@ async function main() {
   const db   = getFirestore(app);
 
   const uids    = await phase1_users(auth, db);
-  await           phase2_clean(auth, db);
+  await           phase1b_roles(auth, db, uids);
+  await           phase2_clean(db);
   const schoolId = await phase3_school(db, uids);
   const { profQId } = await phase4_questionnaires(db);
   await phase5_professorResponses(db, uids, schoolId, profQId);
@@ -479,7 +547,7 @@ async function main() {
   console.log('  professor4@self.edu.br     Prof. Diego Almeida (forte em tech)');
   console.log('  professor5@self.edu.br     Prof. Eduarda Lima (equilibrada)');
   console.log('\n  🏫  Escola: "Escola Municipal João Paulo II"');
-  console.log('  📊  20 respostas de estudantes + 6 respostas de professores\n');
+  console.log('  📊  6 respostas de professores\n');
 
   process.exit(0);
 }

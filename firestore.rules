@@ -6,44 +6,121 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function callerDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // .get(campo, default) em vez de .campo: em regras, ler um campo ausente
+    // é erro e nega a requisição inteira. Documentos legados sem role/schoolId
+    // ficariam irrecuperáveis.
+    function callerRole() {
+      return callerDoc().get('role', '');
+    }
+
+    function callerSchoolId() {
+      return callerDoc().get('schoolId', '');
+    }
+
     function hasRole(role) {
-      return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+      return isAuthenticated() && callerRole() == role;
     }
 
     function hasAnyRole(roles) {
-      return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in roles;
+      return isAuthenticated() && callerRole() in roles;
     }
 
     function belongsToSchool(schoolId) {
-      return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId == schoolId;
+      return isAuthenticated() && callerSchoolId() == schoolId;
+    }
+
+    // Mesma escola, exigindo que AMBOS os schoolIds existam. Sem o != '' um
+    // gestor sem escola casaria com todo usuário sem escola ('' == '').
+    function sameSchoolAsCaller(targetData) {
+      return callerSchoolId() != '' && callerSchoolId() == targetData.get('schoolId', '');
+    }
+
+    function fieldUnchanged(field) {
+      return request.resource.data.get(field, '') == resource.data.get(field, '');
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function callerEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    // ── Vinculação com escola ─────────────────────────────────────────────────
+    // O aceite de convite é o próprio professor gravando seu schoolId, então a
+    // regra precisa distinguir isso de uma autovinculação. Regras não fazem
+    // query, só exists() em caminho exato — daí o ID determinístico do convite
+    // (ver invitationId() em src/services/firestoreService.ts; os dois formatos
+    // precisam mudar juntos).
+    function invitedToSchool(schoolId) {
+      return exists(/databases/$(database)/documents/invitations/$(schoolId + '__' + callerEmail()));
+    }
+
+    // O gestor cria a escola com gestorId = ele mesmo e depois se vincula.
+    function ownsSchool(schoolId) {
+      return exists(/databases/$(database)/documents/schools/$(schoolId)) &&
+             get(/databases/$(database)/documents/schools/$(schoolId)).data.get('gestorId', '') == request.auth.uid;
+    }
+
+    function selfSchoolChangeAllowed() {
+      return fieldUnchanged('schoolId') ||
+             invitedToSchool(request.resource.data.get('schoolId', '')) ||
+             ownsSchool(request.resource.data.get('schoolId', ''));
     }
 
     // ── Usuários ──────────────────────────────────────────────────────────────
+    // Hierarquia estritamente descendente: admin atribui qualquer cargo,
+    // secretaria para no gestor, gestor só convida. Ninguém altera o próprio
+    // cargo. Espelhado em src/utils/roleUtils.ts (assignableRoles).
     match /users/{userId} {
       allow read: if isAuthenticated() && (
         request.auth.uid == userId ||
         hasAnyRole(['secretaria', 'admin']) ||
-        (hasRole('gestor') && belongsToSchool(resource.data.schoolId))
+        (hasRole('gestor') && sameSchoolAsCaller(resource.data))
       );
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() &&
-                      (request.auth.uid == userId ||
-                       hasAnyRole(['admin', 'secretaria']));
+
+      // Autocadastro (e-mail/senha e primeiro login Google): sempre professor.
+      allow create: if isAuthenticated() &&
+                       request.auth.uid == userId &&
+                       request.resource.data.uid == userId &&
+                       request.resource.data.role == 'professor';
+
+      allow update: if isAuthenticated() && (
+        // 1) próprio perfil — nunca o cargo, nunca a rede, escola só por convite.
+        //    Primeiro ramo de propósito: no caso comum não faz get() extra.
+        (request.auth.uid == userId &&
+         fieldUnchanged('role') &&
+         fieldUnchanged('networkId') &&
+         selfSchoolChangeAllowed()) ||
+
+        // 2) admin atribui qualquer cargo
+        (hasRole('admin') && request.auth.uid != userId) ||
+
+        // 3) secretaria atribui só professor/gestor, e só a quem já é
+        //    professor/gestor — não cria nem rebaixa admin/secretaria
+        (hasRole('secretaria') &&
+         request.auth.uid != userId &&
+         resource.data.get('role', '') in ['professor', 'gestor'] &&
+         request.resource.data.role in ['professor', 'gestor'])
+      );
+
       allow delete: if hasRole('admin');
     }
 
     // ── Escolas ───────────────────────────────────────────────────────────────
     match /schools/{schoolId} {
-      allow read: if true; // Público — estudantes precisam ver lista de escolas
+      allow read: if isAuthenticated();
       // Gestores podem criar escolas; a regra usa o role do documento do usuário
       allow create: if isAuthenticated() &&
                        hasAnyRole(['secretaria', 'admin', 'gestor']);
       // Gestor pode atualizar se for o gestorId da escola (novo) OU se já tiver schoolId igual
       allow update: if (hasRole('gestor') &&
-                         (resource.data.gestorId == request.auth.uid ||
+                         (resource.data.get('gestorId', '') == request.auth.uid ||
                           belongsToSchool(schoolId))) ||
                        hasAnyRole(['secretaria', 'admin']);
       allow delete: if hasAnyRole(['secretaria', 'admin']);
@@ -51,21 +128,29 @@ service cloud.firestore {
 
     // ── Questionários ─────────────────────────────────────────────────────────
     match /questionnaires/{questionnaireId} {
-      allow read: if true; // Público — estudantes precisam ler o questionário
-      allow create: if isAuthenticated(); // Qualquer usuário autenticado pode criar (para seed)
+      allow read: if isAuthenticated();
+      // TODO: restringir a ['secretaria','admin'] depois de pré-popular os
+      // questionários por script. Hoje getOrSeedQuestionnaire roda no cliente
+      // (useProfessorData, QuestionarioPage, useGestorData) e precisa criar.
+      allow create: if isAuthenticated();
       allow update, delete: if hasAnyRole(['secretaria', 'admin']);
     }
 
     // ── Respostas (professores — autenticadas) ────────────────────────────────
     match /responses/{responseId} {
-      // get (leitura de documento único): só o dono ou papel com acesso
       allow get: if isAuthenticated() &&
                    (resource.data.userId == request.auth.uid ||
                     hasAnyRole(['gestor', 'secretaria', 'admin']));
-      // list (queries): qualquer usuário autenticado pode listar
-      // A segurança real é garantida pelo código cliente que sempre filtra por userId
-      allow list: if isAuthenticated();
-      allow create: if isAuthenticated();
+      // Regras de list são avaliadas por documento retornado: a query passa
+      // apenas se todo resultado passar. Substitui o antigo
+      // "allow list: if isAuthenticated()", que dependia de filtro no cliente.
+      allow list: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        hasAnyRole(['secretaria', 'admin']) ||
+        (hasRole('gestor') && belongsToSchool(resource.data.get('schoolId', '')))
+      );
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if hasRole('admin');
     }
@@ -87,16 +172,29 @@ service cloud.firestore {
 
     // ── Convites ──────────────────────────────────────────────────────────────
     match /invitations/{invitationId} {
-      allow read: if isAuthenticated();
-      allow create: if hasAnyRole(['gestor', 'secretaria', 'admin']);
-      allow update: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        resource.data.email == callerEmail() ||
+        hasAnyRole(['secretaria', 'admin']) ||
+        (hasRole('gestor') && belongsToSchool(resource.data.schoolId))
+      );
+      // Gestor convida só para a própria escola, e só como professor
+      allow create: if request.resource.data.role == 'professor' &&
+                       (hasAnyRole(['secretaria', 'admin']) ||
+                        (hasRole('gestor') && belongsToSchool(request.resource.data.schoolId)));
+      // O convidado pode aceitar (status) e sinalizar que viu (viewedAt), nada mais
+      allow update: if hasAnyRole(['gestor', 'secretaria', 'admin']) ||
+                       (isAuthenticated() &&
+                        resource.data.email == callerEmail() &&
+                        changedKeys().hasOnly(['status', 'viewedAt']));
       allow delete: if hasAnyRole(['gestor', 'secretaria', 'admin']);
     }
 
     // ── Materiais de apoio ────────────────────────────────────────────────────
     match /support_materials/{materialId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Para seed automático
+      // TODO: restringir depois de pré-popular por script (mesmo caso de
+      // questionnaires — seedDefaultSupportMaterials roda no cliente).
+      allow create: if isAuthenticated();
       allow update, delete: if hasAnyRole(['secretaria', 'admin']);
     }
   }
