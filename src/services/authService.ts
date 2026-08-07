@@ -135,7 +135,11 @@ export const resetPassword = async (email: string): Promise<void> => {
   try {
     await sendPasswordResetEmail(auth, email);
   } catch (error: any) {
-    throw new Error(error.message || 'Erro ao enviar email de recuperação');
+    // Silencioso quando a conta não existe: revelar isso permitiria descobrir
+    // quais e-mails têm conta na plataforma. A tela mostra sempre a mesma
+    // mensagem neutra.
+    if (error?.code === 'auth/user-not-found') return;
+    throw new Error(mapAuthError(error));
   }
 };
 

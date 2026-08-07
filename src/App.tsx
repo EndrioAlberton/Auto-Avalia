@@ -12,6 +12,7 @@ import { colors } from './components/ui/tokens';
 // Public pages (Phase 9)
 const LoginPage    = lazy(() => import('./features/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
 
 // Professor pages (Phase 5)
 const ProfessorInicioPage      = lazy(() => import('./features/professor/InicioPage').then((m) => ({ default: m.InicioPage })));
@@ -50,6 +51,7 @@ const App: React.FC = () => {
         {/* Public */}
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Professor */}
         <Route
