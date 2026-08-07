@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 import type { User } from '../types';
 import { getUserData, signIn, signOut, signUp, signInWithGoogle } from '../services/authService';
 
@@ -11,7 +12,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   loginWithGoogle: () => Promise<User>;
-  register: (email: string, password: string, displayName: string, role: any, additionalData?: any) => Promise<User>;
+  register: (email: string, password: string, displayName: string) => Promise<User>;
   logout: () => Promise<void>;
   /** Recarrega os dados do usuário do Firestore e atualiza o contexto */
   refreshUser: () => Promise<void>;
@@ -37,25 +38,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // Assinatura do documento do usuário, renovada a cada troca de sessão.
+    let unsubscribeDoc: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      
-      if (user) {
-        try {
-          const userData = await getUserData(user.uid);
-          setCurrentUser(userData);
-        } catch (error) {
+
+      unsubscribeDoc?.();
+      unsubscribeDoc = null;
+
+      if (!user) {
+        setCurrentUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // onSnapshot em vez de leitura única: mudanças de cargo passam a valer na
+      // hora, sem o usuário precisar sair e entrar de novo.
+      unsubscribeDoc = onSnapshot(
+        doc(db, 'users', user.uid),
+        (snap) => {
+          setCurrentUser(snap.exists() ? (snap.data() as User) : null);
+          setLoading(false);
+        },
+        (error) => {
           console.error('Erro ao carregar dados do usuário:', error);
           setCurrentUser(null);
-        }
-      } else {
-        setCurrentUser(null);
-      }
-      
-      setLoading(false);
+          setLoading(false);
+        },
+      );
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeDoc?.();
+      unsubscribeAuth();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<User> => {
@@ -71,13 +88,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (
-    email: string, 
-    password: string, 
+    email: string,
+    password: string,
     displayName: string,
-    role: any,
-    additionalData?: any
   ): Promise<User> => {
-    const user = await signUp(email, password, displayName, role, additionalData);
+    const user = await signUp(email, password, displayName);
     setCurrentUser(user);
     return user;
   };

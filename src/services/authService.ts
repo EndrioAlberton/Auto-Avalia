@@ -7,7 +7,7 @@ import {
   sendPasswordResetEmail,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 import type { User} from '../types';
 import { UserRole } from '../types';
@@ -34,13 +34,14 @@ function mapAuthError(error: any): string {
   return AUTH_ERROR_MESSAGES[code] ?? error?.message ?? 'Erro ao fazer login';
 }
 
-// Criar nova conta
+// Criar nova conta — sempre como professor.
+// Não recebe `role` de propósito: o cliente não deve ser capaz de pedir um cargo.
+// Gestor e secretaria são concedidos depois, pela administração (updateUserRole).
 export const signUp = async (
-  email: string, 
-  password: string, 
+  email: string,
+  password: string,
   displayName: string,
-  role: UserRole,
-  additionalData?: Record<string, any>
+  additionalData?: Pick<Partial<User>, 'photoURL'>
 ): Promise<User> => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -54,10 +55,11 @@ export const signUp = async (
       uid: firebaseUser.uid,
       email: firebaseUser.email!,
       displayName,
-      role,
+      ...additionalData,
+      // Depois do spread: additionalData nunca sobrescreve o cargo.
+      role: UserRole.PROFESSOR,
       createdAt: new Date(),
       updatedAt: new Date(),
-      ...additionalData
     };
 
     await setDoc(doc(db, 'users', firebaseUser.uid), {
@@ -149,21 +151,6 @@ export const getUserData = async (uid: string): Promise<User> => {
     return userDoc.data() as User;
   } catch (error: any) {
     throw new Error(error.message || 'Erro ao buscar dados do usuário');
-  }
-};
-
-// Atualizar perfil do usuário
-export const updateUserProfile = async (
-  uid: string, 
-  data: Partial<User>
-): Promise<void> => {
-  try {
-    await updateDoc(doc(db, 'users', uid), {
-      ...data,
-      updatedAt: serverTimestamp()
-    });
-  } catch (error: any) {
-    throw new Error(error.message || 'Erro ao atualizar perfil');
   }
 };
 

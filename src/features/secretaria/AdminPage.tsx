@@ -2,42 +2,47 @@ import { useState, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListSubheader from '@mui/material/ListSubheader';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import SearchIcon from '@mui/icons-material/Search';
 import PeopleIcon from '@mui/icons-material/People';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { PageHeader } from '../../components/ui/layout/PageHeader';
 import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import type { Column } from '../../components/ui/data-display/DataTable';
 import { DataTable } from '../../components/ui/data-display/DataTable';
 import { Badge } from '../../components/ui/primitives/Badge';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
+import { useToast } from '../../components/ui/feedback/ToastProvider';
+import { useAuth } from '../../contexts/AuthContext';
+import { updateUserRole } from '../../services/firestoreService';
 import { useSecretariaData } from './hooks/useSecretariaData';
 import type { User} from '../../types';
 import { UserRole } from '../../types';
+import { assignableRoles, roleLabel, ROLE_BADGE_VARIANTS } from '../../utils/roleUtils';
 import { colors, radius } from '../../components/ui/tokens';
 import Typography from '@mui/material/Typography';
 
 type RoleFilter = 'all' | UserRole.PROFESSOR | UserRole.GESTOR | UserRole.SECRETARIA;
 
-const ROLE_LABELS: Record<string, string> = {
-  professor: 'Professor',
-  gestor: 'Gestor',
-  secretaria: 'Secretaria',
-  admin: 'Admin',
-  estudante: 'Estudante',
-};
-
-const ROLE_VARIANTS: Record<string, 'accent' | 'success' | 'neutral' | 'warning'> = {
-  professor: 'accent',
-  gestor: 'success',
-  secretaria: 'warning',
-  admin: 'warning',
-  estudante: 'neutral',
-};
-
 export function AdminPage() {
-  const { loading, allUsers, schools } = useSecretariaData();
+  const { loading, allUsers, schools, refreshData } = useSecretariaData();
+  const { currentUser } = useAuth();
+  const toast = useToast();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuTarget, setMenuTarget] = useState<User | null>(null);
+  const [confirm, setConfirm] = useState<{ user: User; role: UserRole } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -64,8 +69,8 @@ export function AdminPage() {
       header: 'Perfil',
       render: (u) => (
         <Badge
-          label={ROLE_LABELS[u.role] ?? u.role}
-          variant={ROLE_VARIANTS[u.role] ?? 'neutral'}
+          label={roleLabel(u.role)}
+          variant={ROLE_BADGE_VARIANTS[u.role] ?? 'neutral'}
         />
       ),
     },
@@ -88,7 +93,49 @@ export function AdminPage() {
         return d.toLocaleDateString('pt-BR');
       },
     },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (u) => {
+        if (!currentUser) return null;
+        // Vazio na própria linha (ninguém altera o próprio cargo) e quando o
+        // ator não tem permissão sobre este alvo — mesmo predicado das regras.
+        if (assignableRoles(currentUser.role, currentUser.uid, u).length === 0) return null;
+        return (
+          <IconButton
+            size="small"
+            onClick={(e) => { setMenuAnchor(e.currentTarget); setMenuTarget(u); }}
+            sx={{ color: colors.inkSubtle }}
+          >
+            <MoreHorizIcon fontSize="small" />
+          </IconButton>
+        );
+      },
+    },
   ];
+
+  const menuOptions = currentUser && menuTarget
+    ? assignableRoles(currentUser.role, currentUser.uid, menuTarget).filter((r) => r !== menuTarget.role)
+    : [];
+
+  const closeMenu = () => { setMenuAnchor(null); setMenuTarget(null); };
+
+  const handleChangeRole = async () => {
+    if (!confirm) return;
+    const { user, role } = confirm;
+    setSaving(true);
+    try {
+      await updateUserRole(user.uid, role);
+      toast.success(`${user.displayName} agora é ${roleLabel(role)}.`);
+      setConfirm(null);
+      refreshData();
+    } catch {
+      toast.error('Erro ao alterar o perfil. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const FILTERS: { label: string; value: RoleFilter }[] = [
     { label: 'Todos', value: 'all' },
@@ -154,6 +201,64 @@ export function AdminPage() {
           }
         />
       </ContentCard>
+
+      {/* Menu único, fora do renderer da coluna — evita montar um portal por linha */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor && menuTarget)}
+        onClose={closeMenu}
+        PaperProps={{ sx: { background: colors.surface2, border: `1px solid ${colors.hairline}` } }}
+      >
+        <ListSubheader sx={{ background: 'transparent', color: colors.inkSubtle, fontSize: 12, lineHeight: 2.2 }}>
+          Alterar perfil para…
+        </ListSubheader>
+        {menuOptions.map((r) => (
+          <MenuItem
+            key={r}
+            onClick={() => { if (menuTarget) setConfirm({ user: menuTarget, role: r }); closeMenu(); }}
+            sx={{ fontSize: 13, color: colors.ink }}
+          >
+            {roleLabel(r)}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Dialog
+        open={Boolean(confirm)}
+        onClose={() => !saving && setConfirm(null)}
+        PaperProps={{ sx: { background: colors.surface2, border: `1px solid ${colors.hairline}`, minWidth: 420 } }}
+      >
+        <DialogTitle sx={{ color: colors.ink }}>Alterar perfil</DialogTitle>
+        <DialogContent>
+          {confirm && (
+            <Box display="flex" flexDirection="column" gap={1.5}>
+              <Typography sx={{ fontSize: 14, color: colors.ink }}>
+                <strong>{confirm.user.displayName}</strong> deixará de ser{' '}
+                {roleLabel(confirm.user.role)} e passará a ser{' '}
+                <strong>{roleLabel(confirm.role)}</strong>.
+              </Typography>
+              {(confirm.role === UserRole.SECRETARIA || confirm.role === UserRole.ADMIN) && (
+                <Typography sx={{ fontSize: 13, color: colors.warning }}>
+                  Atenção: esse perfil terá acesso aos dados de <strong>todas as escolas da rede</strong>.
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirm(null)} disabled={saving} sx={{ color: colors.inkMuted }}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleChangeRole}
+            disabled={saving}
+            startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
+          >
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

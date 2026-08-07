@@ -84,8 +84,25 @@ export const getUserData = async (uid: string): Promise<User> => {
   return snap.data() as User;
 };
 
-export const updateUserProfile = async (uid: string, data: Partial<User>): Promise<void> => {
-  await updateDoc(doc(db, 'users', uid), { ...data, updatedAt: serverTimestamp() });
+/**
+ * Dados de perfil que o próprio usuário pode alterar. O campo `role` é proibido
+ * aqui — quem escreve cargo é `updateUserRole`. O index signature existe porque
+ * os call sites passam campos de Professor (subjects/segment/classes) que não
+ * estão em `User`.
+ */
+export type UserProfileUpdate =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Omit<Partial<User>, 'uid' | 'role' | 'createdAt'> & { role?: never; [k: string]: any };
+
+export const updateUserProfile = async (uid: string, data: UserProfileUpdate): Promise<void> => {
+  // Blindagem em runtime: o tipo sozinho não segura, porque os call sites usam `as any`.
+  const safe = Object.fromEntries(Object.entries(data).filter(([k]) => k !== 'role'));
+  await updateDoc(doc(db, 'users', uid), stripUndefined({ ...safe, updatedAt: serverTimestamp() }));
+};
+
+/** Única via de escrita do campo `role`. As regras restringem quem pode chamá-la. */
+export const updateUserRole = async (uid: string, role: UserRole): Promise<void> => {
+  await updateDoc(doc(db, 'users', uid), { role, updatedAt: serverTimestamp() });
 };
 
 /** Retorna usuários de uma escola, com filtro opcional de role */
