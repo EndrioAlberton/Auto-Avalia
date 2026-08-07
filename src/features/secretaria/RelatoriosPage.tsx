@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -11,17 +11,24 @@ import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { DataTable } from '../../components/ui/data-display/DataTable';
 import { Badge } from '../../components/ui/primitives/Badge';
+import { MultiSelectFilter } from '../../components/ui/primitives/MultiSelectFilter';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useSecretariaData } from './hooks/useSecretariaData';
-import { DOMAINS, SUBJECT_OPTIONS } from '../../data/questionnaireData';
-import { formatFirestoreDate } from '../../services/analyticsService';
+import { DOMAINS } from '../../data/questionnaireData';
 import { colors } from '../../components/ui/tokens';
 import { exportCsv } from '../../utils/exportCsv';
 import type { DomainScore } from '../../services/analyticsService';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
-  const { loading, schoolsWithStats, teachersWithScores } = useSecretariaData();
+  const { loading, schoolsWithStats, disciplineStats, totalTeachers, totalResponded } = useSecretariaData();
+
+  const disciplineOptions = useMemo(
+    () => disciplineStats.map((d) => ({ value: d.subject, label: d.label })),
+    [disciplineStats],
+  );
+  const [selectedSubjects, setSelectedSubjects] = useState<string[] | null>(null);
+  const activeSubjects = selectedSubjects ?? disciplineOptions.map((o) => o.value);
 
   if (loading) {
     return (
@@ -31,11 +38,9 @@ export function RelatoriosPage() {
     );
   }
 
-  const totalRespondidos = teachersWithScores.filter((t) => t.hasResponded).length;
-  const totalProfessores = teachersWithScores.length;
   const totalEscolas = schoolsWithStats.length;
   const taxaGeral =
-    totalProfessores > 0 ? Math.round((totalRespondidos / totalProfessores) * 100) : 0;
+    totalTeachers > 0 ? Math.round((totalResponded / totalTeachers) * 100) : 0;
 
   const schoolBarData = schoolsWithStats.map((s) => ({
     domain: s.id,
@@ -44,39 +49,14 @@ export function RelatoriosPage() {
     score: s.avgScore,
   }));
 
-  // ── Dados por disciplina ──────────────────────────────────────────────────
-  const disciplineAccum: Record<string, { label: string; domainSums: Record<string, number[]>; count: number }> = {};
-
-  for (const t of teachersWithScores) {
-    if (!t.hasResponded || !t.scores) continue;
-    const subjects: string[] = (t as any).subjects ?? [];
-    for (const sub of subjects) {
-      const opt = SUBJECT_OPTIONS.find((o) => o.value === sub);
-      if (!opt) continue;
-      if (!disciplineAccum[sub]) {
-        disciplineAccum[sub] = { label: opt.label, domainSums: {}, count: 0 };
-      }
-      disciplineAccum[sub].count++;
-      for (const { domain, score } of t.scores as DomainScore[]) {
-        if (score <= 0) continue;
-        if (!disciplineAccum[sub].domainSums[domain]) disciplineAccum[sub].domainSums[domain] = [];
-        disciplineAccum[sub].domainSums[domain].push(score);
-      }
-    }
-  }
-
-  const disciplineRows = Object.entries(disciplineAccum)
-    .filter(([_, d]) => d.count > 0)
-    .map(([subValue, d]) => {
-      const entry: Record<string, any> = { subject: subValue, label: d.label, total: d.count };
-      for (const [domain, vals] of Object.entries(d.domainSums)) {
-        entry[domain] = vals.length > 0
-          ? parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2))
-          : 0;
-      }
+  // ── Dados por disciplina (filtrados) ──────────────────────────────────────
+  const disciplineRows = disciplineStats
+    .filter((d) => activeSubjects.includes(d.subject))
+    .map((d) => {
+      const entry: Record<string, any> = { subject: d.subject, label: d.label, total: d.total };
+      for (const { domain, score } of d.domainScores) entry[domain] = score;
       return entry;
-    })
-    .sort((a, b) => b.total - a.total);
+    });
 
   const disciplineBarData = disciplineRows.map((r) => ({
     domain: r.subject,
@@ -91,14 +71,13 @@ export function RelatoriosPage() {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: `1px solid ${colors.hairline}` }}>
         <Tab label="Rede" />
         <Tab label="Por Escola" />
-        <Tab label="Por Professor" />
         <Tab label="Por Disciplina" />
       </Tabs>
 
       {/* ── Rede ── */}
       {tab === 0 && (
         <Box>
-          {totalProfessores === 0 ? (
+          {totalTeachers === 0 ? (
             <EmptyState
               icon={<BarChartIcon />}
               title="Dados insuficientes"
@@ -109,8 +88,8 @@ export function RelatoriosPage() {
               <Box display="flex" gap={2} flexWrap="wrap">
                 {[
                   { label: 'Escolas', value: totalEscolas },
-                  { label: 'Professores', value: totalProfessores },
-                  { label: 'Responderam', value: totalRespondidos },
+                  { label: 'Professores', value: totalTeachers },
+                  { label: 'Responderam', value: totalResponded },
                   { label: 'Taxa de resposta', value: `${taxaGeral}%` },
                 ].map((kpi) => (
                   <Box
@@ -303,9 +282,9 @@ export function RelatoriosPage() {
       )}
 
       {/* ── Por Disciplina ── */}
-      {tab === 3 && (
+      {tab === 2 && (
         <Box>
-          {disciplineRows.length === 0 ? (
+          {disciplineStats.length === 0 ? (
             <EmptyState
               icon={<BarChartIcon />}
               title="Sem dados por disciplina"
@@ -313,7 +292,17 @@ export function RelatoriosPage() {
             />
           ) : (
             <>
-              <ContentCard title="Pontuação por disciplina">
+              <ContentCard
+                title="Pontuação por disciplina"
+                action={
+                  <MultiSelectFilter
+                    label="Disciplinas"
+                    options={disciplineOptions}
+                    value={activeSubjects}
+                    onChange={setSelectedSubjects}
+                  />
+                }
+              >
                 <DomainBarChart
                   data={disciplineBarData}
                   keys={DOMAINS.map((d) => d.key)}

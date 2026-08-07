@@ -196,7 +196,7 @@ export function overallScore(scores: DomainScore[]): number {
 }
 
 
-const SEGMENT_LABELS: Record<string, string> = {
+export const SEGMENT_LABELS: Record<string, string> = {
   educacao_infantil: 'Educação Infantil',
   anos_iniciais: 'Anos Iniciais',
   anos_finais: 'Anos Finais',

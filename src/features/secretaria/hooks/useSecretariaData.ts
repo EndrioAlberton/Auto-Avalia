@@ -6,9 +6,9 @@ import type {
   DomainScore} from '../../../services/analyticsService';
 import {
   responsesToAvgScores,
-  answersToScores,
-  overallScore
+  answersToScores
 } from '../../../services/analyticsService';
+import { SUBJECT_OPTIONS, DOMAIN_LABELS } from '../../../data/questionnaireData';
 
 export interface SchoolWithStats extends School {
   responseRate: number;
@@ -18,19 +18,20 @@ export interface SchoolWithStats extends School {
   avgScores: DomainScore[];
 }
 
-export interface TeacherWithScore extends User {
-  schoolName: string;
-  hasResponded: boolean;
-  scores: DomainScore[] | null;
-  overall: number;
-  completedAt: any;
+export interface DisciplineStat {
+  subject: string;
+  label: string;
+  total: number;
+  domainScores: DomainScore[];
 }
 
 export interface SecretariaData {
   schools: School[];
   allUsers: User[];
   schoolsWithStats: SchoolWithStats[];
-  teachersWithScores: TeacherWithScore[];
+  disciplineStats: DisciplineStat[];
+  totalTeachers: number;
+  totalResponded: number;
   loading: boolean;
   error: string;
   refreshData: () => void;
@@ -41,7 +42,7 @@ export function useSecretariaData(): SecretariaData {
   const [schools, setSchools] = useState<School[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [schoolsWithStats, setSchoolsWithStats] = useState<SchoolWithStats[]>([]);
-  const [teachersWithScores, setTeachersWithScores] = useState<TeacherWithScore[]>([]);
+  const [disciplineStats, setDisciplineStats] = useState<DisciplineStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tick, setTick] = useState(0);
@@ -104,8 +105,9 @@ export function useSecretariaData(): SecretariaData {
           };
         });
 
-        // Agrega professores com scores individuais
-        const teacherRows: TeacherWithScore[] = schoolDataList.flatMap(({ school, responses, teachers }) => {
+        // Calcula scores individuais por professor apenas para alimentar a agregação
+        // por disciplina abaixo — nome/identidade nunca sai deste escopo.
+        const perTeacherScores = schoolDataList.flatMap(({ responses, teachers }) => {
           const byTeacher = new Map<string, QuestionnaireResponse[]>();
           for (const r of responses) {
             if (!r.userId) continue;
@@ -122,28 +124,54 @@ export function useSecretariaData(): SecretariaData {
             })[0];
 
             let scores: DomainScore[] | null = null;
-            let overall = 0;
             if (latest) {
               const map: Record<string, number> = {};
               for (const a of latest.answers) map[a.questionId] = Number(a.value);
               scores = answersToScores(map);
-              overall = overallScore(scores);
             }
 
             return {
-              ...teacher,
-              schoolName: school.name,
+              subjects: (teacher as any).subjects as string[] | undefined,
               hasResponded: !!latest,
               scores,
-              overall,
-              completedAt: latest?.completedAt ?? null,
             };
           });
         });
 
+        // Agrega por disciplina — nenhum campo de identidade é mantido no resultado
+        const disciplineAccum: Record<string, { label: string; domainSums: Record<string, number[]>; count: number }> = {};
+        for (const t of perTeacherScores) {
+          if (!t.hasResponded || !t.scores) continue;
+          for (const sub of t.subjects ?? []) {
+            const opt = SUBJECT_OPTIONS.find((o) => o.value === sub);
+            if (!opt) continue;
+            if (!disciplineAccum[sub]) disciplineAccum[sub] = { label: opt.label, domainSums: {}, count: 0 };
+            disciplineAccum[sub].count++;
+            for (const { domain, score } of t.scores) {
+              if (score <= 0) continue;
+              if (!disciplineAccum[sub].domainSums[domain]) disciplineAccum[sub].domainSums[domain] = [];
+              disciplineAccum[sub].domainSums[domain].push(score);
+            }
+          }
+        }
+
+        const discStats: DisciplineStat[] = Object.entries(disciplineAccum)
+          .filter(([, d]) => d.count > 0)
+          .map(([subject, d]) => ({
+            subject,
+            label: d.label,
+            total: d.count,
+            domainScores: Object.entries(d.domainSums).map(([domain, vals]) => ({
+              domain,
+              label: DOMAIN_LABELS[domain] ?? domain,
+              score: vals.length > 0 ? parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)) : 0,
+            })),
+          }))
+          .sort((a, b) => b.total - a.total);
+
         if (!cancelled) {
           setSchoolsWithStats(stats);
-          setTeachersWithScores(teacherRows);
+          setDisciplineStats(discStats);
         }
       } catch (e: unknown) {
         if (!cancelled) setError((e as Error)?.message ?? 'Erro ao carregar dados');
@@ -155,11 +183,16 @@ export function useSecretariaData(): SecretariaData {
     return () => { cancelled = true; };
   }, [currentUser, tick]);
 
+  const totalTeachers = schoolsWithStats.reduce((s, sc) => s + sc.teachersCount, 0);
+  const totalResponded = schoolsWithStats.reduce((s, sc) => s + sc.respondedCount, 0);
+
   return {
     schools,
     allUsers,
     schoolsWithStats,
-    teachersWithScores,
+    disciplineStats,
+    totalTeachers,
+    totalResponded,
     loading,
     error,
     refreshData,
