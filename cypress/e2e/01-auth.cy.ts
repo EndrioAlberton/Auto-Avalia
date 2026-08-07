@@ -85,12 +85,40 @@ describe('Autenticação', () => {
       cy.get('input[type="password"]').first().should('be.visible');
     });
 
-    it('exibe seletor de perfil (professor/gestor/secretaria)', () => {
-      cy.contains(/perfil|papel|função|tipo de usuário|professor|gestor/i).should('be.visible');
+    it('não exibe seletor de perfil — toda conta nova é professor', () => {
+      // [role="combobox"] é o que o Select do MUI v6 renderiza.
+      cy.get('[role="combobox"]').should('not.exist');
+      cy.contains(/criada como Professor/i).should('be.visible');
     });
 
     it('exibe link para voltar ao login', () => {
       cy.contains(/entrar|login|já tenho conta/i).should('be.visible');
+    });
+  });
+
+  context('Recuperação de senha', () => {
+    it('link do login leva para /forgot-password', () => {
+      cy.visit('/login');
+      cy.contains(/esqueci minha senha/i).click();
+      cy.url().should('include', '/forgot-password');
+    });
+
+    it('exibe campo de email', () => {
+      cy.visit('/forgot-password');
+      cy.get('[data-testid="forgot-email-input"]').should('be.visible');
+    });
+
+    it('mostra confirmação neutra sem revelar se a conta existe', () => {
+      cy.visit('/forgot-password');
+      cy.get('[data-testid="forgot-email-input"]').type('naoexiste@test.com');
+      cy.get('[data-testid="forgot-submit"]').click();
+      cy.contains(/se existir uma conta/i).should('be.visible');
+    });
+
+    it('permite voltar para o login', () => {
+      cy.visit('/forgot-password');
+      cy.contains(/voltar para o login/i).click();
+      cy.url().should('include', '/login');
     });
   });
 });
