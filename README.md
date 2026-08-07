@@ -2,7 +2,7 @@
 
 Plataforma web de autoavaliação e diagnóstico pedagógico. Professores respondem questionários sobre suas práticas, gestores acompanham a equipe, estudantes fornecem feedback anônimo e a secretaria gerencia a rede de escolas.
 
-Este projeto faz parte do **Inovação Pedagógica na Educação Básica** (Edital INOVA EAD CAPES/2023).
+Desenvolvido com fomento do **EDITAL PROPPI Nº 10/2025 - DE BOLSAS DE INICIAÇÃO TECNOLÓGICA - PIBITI/IFRS/CNPq**.
 
 ---
 
@@ -13,17 +13,17 @@ Campus Porto Alegre
 
 ---
 
-## 👥 Colaboradores
+## 👥 Equipe
 
 ### Coordenação
-- **Carine Bueira Loureiro**
+- **Profa. Carine Bueira Loureiro** (MPIE/IFRS)
 
 ### Colaboradora
-- **Silvia de Castro Bertagnolli**
+- **Profa. Silvia de Castro Bertagnolli** (MPI/IFRS)
 
 ### Desenvolvimento
-- **Endrio Alberton Correa Nunes**  
-  Contato: endrio@maxiquim.com.br
+- Bolsista de IC: **Endrio Alberton Correa Nunes** (SSI/IFRS)  
+  Contato: endrio.alberton@gmail.com
 
 ---
 

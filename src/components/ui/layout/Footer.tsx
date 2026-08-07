@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Container, Typography, Link, Grid, Divider } from '@mui/material';
 import GroupIcon from '@mui/icons-material/Group';
 import { colors } from '../tokens';
@@ -22,7 +21,8 @@ export function Footer() {
             </Typography>
             <Typography variant="body2">
               Plataforma de autoavaliação e diagnóstico pedagógico para professores, gestores e estudantes.
-              Desenvolvida como parte do projeto de Inovação Pedagógica na Educação Básica (Edital INOVA EAD CAPES/2023).
+              Desenvolvida com fomento do EDITAL PROPPI Nº 10/2025 - DE BOLSAS DE INICIAÇÃO
+              TECNOLÓGICA - PIBITI/IFRS/CNPq.
             </Typography>
           </Grid>
           <Grid item xs={12} md={4}>
@@ -39,7 +39,7 @@ export function Footer() {
           <Grid item xs={12} md={4}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <GroupIcon />
-              Colaboradores
+              Equipe
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
               Coordenação:
@@ -64,7 +64,7 @@ export function Footer() {
             </Typography>
             <Typography variant="body2">
               <Link
-                href="mailto:endrio@maxiquim.com.br"
+                href="mailto:endrio.alberton@gmail.com"
                 sx={{ color: 'white', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
               >
                 endrio.alberton@gmail.com
@@ -74,7 +74,7 @@ export function Footer() {
         </Grid>
         <Divider sx={{ my: 3, backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
         <Typography variant="body2" align="center" sx={{ opacity: 0.8 }}>
-          © {new Date().getFullYear()} - Grupo de Estudos e Pesquisa em Educação, Matemática e Tecnologias
+          © {new Date().getFullYear()} — Instituto Federal do Rio Grande do Sul
         </Typography>
       </Container>
     </Box>
