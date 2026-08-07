@@ -17,7 +17,6 @@ import { useSecretariaData } from './hooks/useSecretariaData';
 import { DOMAINS } from '../../data/questionnaireData';
 import { colors } from '../../components/ui/tokens';
 import { exportCsv } from '../../utils/exportCsv';
-import type { DomainScore } from '../../services/analyticsService';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
@@ -194,90 +193,6 @@ export function RelatoriosPage() {
             rows={schoolsWithStats}
             loading={loading}
           />
-        </ContentCard>
-      )}
-
-      {/* ── Por Professor ── */}
-      {tab === 2 && (
-        <ContentCard
-          title="Avaliação individual — toda a rede"
-          noPadding
-          action={
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<FileDownloadIcon fontSize="small" />}
-              onClick={() => exportCsv(
-                'relatorio-professores',
-                ['Professor', 'Escola', ...DOMAINS.map((d) => d.label), 'Geral', 'Data', 'Status'],
-                teachersWithScores.map((r: any) => [
-                  r.displayName,
-                  r.schoolName,
-                  ...DOMAINS.map((d) => r.scores?.find((s: any) => s.domain === d.key)?.score?.toFixed(1) ?? ''),
-                  r.hasResponded ? r.overall.toFixed(1) : '',
-                  r.completedAt ? formatFirestoreDate(r.completedAt) : '',
-                  r.hasResponded ? 'Respondeu' : 'Pendente',
-                ]),
-              )}
-            >
-              Exportar CSV
-            </Button>
-          }
-        >
-          {teachersWithScores.length === 0 ? (
-            <EmptyState
-              icon={<BarChartIcon />}
-              title="Nenhum professor encontrado"
-              body="Adicione professores às escolas para visualizar as avaliações."
-            />
-          ) : (
-            <DataTable
-              columns={[
-                { key: 'name', header: 'Professor', render: (r: any) => r.displayName },
-                { key: 'school', header: 'Escola', render: (r: any) => r.schoolName },
-                ...DOMAINS.map((d) => ({
-                  key: d.key,
-                  header: d.label,
-                  align: 'center' as const,
-                  render: (r: any) => {
-                    if (!r.hasResponded) return <span style={{ color: colors.inkSubtle }}>—</span>;
-                    const score = r.scores?.find((s: any) => s.domain === d.key)?.score ?? 0;
-                    return score > 0 ? score.toFixed(1) : '—';
-                  },
-                })),
-                {
-                  key: 'overall',
-                  header: 'Geral',
-                  align: 'center' as const,
-                  render: (r: any) =>
-                    r.hasResponded ? (
-                      <strong style={{ color: colors.accent }}>{r.overall.toFixed(1)}</strong>
-                    ) : (
-                      <span style={{ color: colors.inkSubtle }}>—</span>
-                    ),
-                },
-                {
-                  key: 'data',
-                  header: 'Data',
-                  align: 'center' as const,
-                  render: (r: any) =>
-                    r.completedAt ? formatFirestoreDate(r.completedAt) : '—',
-                },
-                {
-                  key: 'status',
-                  header: 'Status',
-                  align: 'center' as const,
-                  render: (r: any) => (
-                    <Badge
-                      label={r.hasResponded ? 'Respondeu' : 'Pendente'}
-                      variant={r.hasResponded ? 'success' : 'neutral'}
-                    />
-                  ),
-                },
-              ]}
-              rows={teachersWithScores}
-            />
-          )}
         </ContentCard>
       )}
 
