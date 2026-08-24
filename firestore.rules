@@ -67,10 +67,24 @@ service cloud.firestore {
              get(/databases/$(database)/documents/schools/$(schoolId)).data.get('gestorId', '') == request.auth.uid;
     }
 
+    function schoolExists(schoolId) {
+      return exists(/databases/$(database)/documents/schools/$(schoolId));
+    }
+
+    // O professor escolhe a própria escola na lista da rede, no cadastro ou no
+    // perfil. Afrouxa de propósito o modelo de convite: as levas de testes
+    // docentes entram sem depender de um gestor cadastrado em cada escola.
+    // Continua valendo só para professor e só para escola que existe — nome
+    // digitado à mão vai para `schoolNameOther`, que não vincula a lugar nenhum.
     function selfSchoolChangeAllowed() {
+      let novoSchoolId = request.resource.data.get('schoolId', '');
       return fieldUnchanged('schoolId') ||
-             invitedToSchool(request.resource.data.get('schoolId', '')) ||
-             ownsSchool(request.resource.data.get('schoolId', ''));
+             // '' = saiu da escola ou escolheu "Outra". Precisa vir antes de
+             // schoolExists(): exists() com id vazio é erro e nega tudo.
+             novoSchoolId == '' ||
+             (resource.data.get('role', '') == 'professor' && schoolExists(novoSchoolId)) ||
+             invitedToSchool(novoSchoolId) ||
+             ownsSchool(novoSchoolId);
     }
 
     // ── Usuários ──────────────────────────────────────────────────────────────

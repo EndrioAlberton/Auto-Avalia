@@ -39,19 +39,33 @@ export function AdminPage() {
   const toast = useToast();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [soSemEscola, setSoSemEscola] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuTarget, setMenuTarget] = useState<User | null>(null);
   const [confirm, setConfirm] = useState<{ user: User; role: UserRole } | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Quem digitou a escola à mão no cadastro: não está vinculado a escola nenhuma
+  // e por isso fica fora dos agregados da rede até alguém cadastrar a escola.
+  const semEscolaCadastrada = (u: User) => !u.schoolId && !!u.schoolNameOther;
+
+  const totalSemEscolaCadastrada = useMemo(
+    () => allUsers.filter(semEscolaCadastrada).length,
+    [allUsers],
+  );
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return allUsers.filter((u) => {
       const matchRole = roleFilter === 'all' || u.role === roleFilter;
-      const matchSearch = !q || u.displayName?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
-      return matchRole && matchSearch;
+      const matchSearch = !q ||
+        u.displayName?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.schoolNameOther?.toLowerCase().includes(q);
+      const matchEscola = !soSemEscola || semEscolaCadastrada(u);
+      return matchRole && matchSearch && matchEscola;
     });
-  }, [allUsers, search, roleFilter]);
+  }, [allUsers, search, roleFilter, soSemEscola]);
 
   const columns: Column<User>[] = [
     {
@@ -78,9 +92,21 @@ export function AdminPage() {
       key: 'school',
       header: 'Escola',
       render: (u) => {
-        if (!u.schoolId) return '—';
-        const school = schools.find((s) => s.id === u.schoolId);
-        return <Typography sx={{ fontSize: 13, color: colors.inkMuted }}>{school?.name ?? u.schoolId}</Typography>;
+        if (u.schoolId) {
+          const school = schools.find((s) => s.id === u.schoolId);
+          return <Typography sx={{ fontSize: 13, color: colors.inkMuted }}>{school?.name ?? u.schoolId}</Typography>;
+        }
+        // Escola digitada à mão: mostra o texto para a secretaria conseguir
+        // cadastrar a escola e refazer o vínculo depois.
+        if (u.schoolNameOther) {
+          return (
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+              <Typography sx={{ fontSize: 13, color: colors.inkMuted }}>{u.schoolNameOther}</Typography>
+              <Badge label="Não cadastrada" variant="warning" />
+            </Box>
+          );
+        }
+        return '—';
       },
     },
     {
@@ -150,7 +176,7 @@ export function AdminPage() {
 
       <Box display="flex" gap={2} mb={3} flexWrap="wrap" alignItems="center">
         <TextField
-          placeholder="Buscar por nome ou email..."
+          placeholder="Buscar por nome, email ou escola..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           size="small"
@@ -185,6 +211,26 @@ export function AdminPage() {
             </Box>
           ))}
         </Box>
+
+        {totalSemEscolaCadastrada > 0 && (
+          <Box
+            onClick={() => setSoSemEscola((v) => !v)}
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              borderRadius: `${radius.pill}px`,
+              border: `1px solid ${soSemEscola ? colors.warning : colors.hairline}`,
+              background: soSemEscola ? 'rgba(217,119,6,0.12)' : 'transparent',
+              color: soSemEscola ? colors.warning : colors.inkMuted,
+              fontSize: 13,
+              fontWeight: soSemEscola ? 500 : 400,
+              cursor: 'pointer',
+              transition: 'all 150ms ease',
+            }}
+          >
+            Escola não cadastrada ({totalSemEscolaCadastrada})
+          </Box>
+        )}
       </Box>
 
       <ContentCard title="Usuários" noPadding>
