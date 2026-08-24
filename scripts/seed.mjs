@@ -7,7 +7,8 @@
  *   1b. Autentica como admin e atribui os cargos reais (secretaria, gestor)
  *   2.  Limpa coleções: schools, questionnaires, responses,
  *       support_materials, invitations
- *   3.  Cria 1 escola vinculando gestor + 5 professores
+ *   3.  Cria as 102 escolas próprias da RME-POA e lota gestor + 5 professores
+ *       em uma delas
  *   4.  Cria questionários de professor e estudante
  *   5.  Cria respostas completas de cada professor (Ana tem 2 = evolução)
  *   7.  Cria materiais de apoio
@@ -54,7 +55,9 @@ import {
   deleteDoc,
   serverTimestamp,
   Timestamp,
+  writeBatch,
 } from 'firebase/firestore';
+import { ESCOLAS_POA } from './data/escolas-poa.mjs';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -71,6 +74,11 @@ const firebaseConfig = {
 
 const PASSWORD = 'Self@2025';
 const NETWORK_ID = 'rede-padrao';
+
+// Escola onde o gestor e os professores de demonstração ficam lotados. É uma
+// EMEB porque os professores do seed cobrem fundamental e médio — as demais 101
+// escolas entram sem gestor e sem respostas.
+const ESCOLA_DEMO_ID = 'emeb-dr-liberato-salzano-vieira-da-cunha';
 
 const USERS = [
   {
@@ -420,29 +428,37 @@ async function phase2_clean(db) {
   for (const c of cols) await clearCollection(db, c);
 }
 
-async function phase3_school(db, uids) {
-  console.log('\n🏫  FASE 3 — Escola');
+async function phase3_schools(db, uids) {
+  console.log('\n🏫  FASE 3 — Escolas da RME-POA');
 
   const gestorUid = uids['gestor@self.edu.br'];
-  const schoolRef = doc(collection(db, 'schools'));
-  const schoolId = schoolRef.id;
+  const demo = ESCOLAS_POA.find((e) => e.id === ESCOLA_DEMO_ID);
+  if (!demo) throw new Error(`Escola de demonstração não encontrada: ${ESCOLA_DEMO_ID}`);
 
-  await setDoc(schoolRef, {
-    name: 'Escola Municipal João Paulo II',
-    networkId: NETWORK_ID,
-    region: 'Sul',
-    district: 'Centro',
-    segments: ['anos_iniciais','anos_finais','ensino_medio'],
-    address: 'Rua das Flores, 123 — Centro',
-    phone: '(11) 3456-7890',
-    contact: 'contato@jpaulo2.edu.br',
-    gestorId: gestorUid,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-  console.log(`   ✅ Escola criada: ${schoolId.slice(0,8)}…`);
+  // Ids determinísticos (slug do nome) em vez de aleatórios: assim reexecutar o
+  // seed reescreve as mesmas escolas em vez de multiplicá-las.
+  const batch = writeBatch(db);
+  for (const { id, ...escola } of ESCOLAS_POA) {
+    batch.set(doc(db, 'schools', id), {
+      ...escola,
+      networkId: NETWORK_ID,
+      ...(id === ESCOLA_DEMO_ID ? { gestorId: gestorUid } : {}),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
 
-  // Vincula gestor e professores à escola
+  const porSigla = {};
+  for (const e of ESCOLAS_POA) {
+    const sigla = e.name.split(' ')[0];
+    porSigla[sigla] = (porSigla[sigla] ?? 0) + 1;
+  }
+  const resumo = Object.entries(porSigla).map(([s, n]) => `${n} ${s}`).join(' · ');
+  console.log(`   ✅ ${ESCOLAS_POA.length} escolas criadas (${resumo})`);
+  console.log(`   🎓 Escola de demonstração: ${demo.name}`);
+
+  // Vincula gestor e professores à escola de demonstração
   const toLink = [
     'gestor@self.edu.br',
     'professor@self.edu.br',
@@ -453,11 +469,14 @@ async function phase3_school(db, uids) {
   ];
   for (const email of toLink) {
     const uid = uids[email];
-    await updateDoc(doc(db, 'users', uid), { schoolId, updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, 'users', uid), {
+      schoolId: ESCOLA_DEMO_ID,
+      updatedAt: serverTimestamp(),
+    });
     console.log(`   🔗 ${email} → schoolId vinculado`);
   }
 
-  return schoolId;
+  return ESCOLA_DEMO_ID;
 }
 
 async function phase4_questionnaires(db) {
@@ -531,7 +550,7 @@ async function main() {
   const uids    = await phase1_users(auth, db);
   await           phase1b_roles(auth, db, uids);
   await           phase2_clean(db);
-  const schoolId = await phase3_school(db, uids);
+  const schoolId = await phase3_schools(db, uids);
   const { profQId } = await phase4_questionnaires(db);
   await phase5_professorResponses(db, uids, schoolId, profQId);
   await phase7_materials(db);
@@ -546,7 +565,8 @@ async function main() {
   console.log('  professor3@self.edu.br     Prof. Carla Ferreira (iniciante)');
   console.log('  professor4@self.edu.br     Prof. Diego Almeida (forte em tech)');
   console.log('  professor5@self.edu.br     Prof. Eduarda Lima (equilibrada)');
-  console.log('\n  🏫  Escola: "Escola Municipal João Paulo II"');
+  console.log(`\n  🏫  ${ESCOLAS_POA.length} escolas próprias da RME-POA`);
+  console.log(`  🎓  Escola de demonstração: ${ESCOLAS_POA.find((e) => e.id === ESCOLA_DEMO_ID).name}`);
   console.log('  📊  6 respostas de professores\n');
 
   process.exit(0);
