@@ -26,11 +26,6 @@ export interface User {
   photoURL?: string;
   // Campos opcionais para acesso rápido ao contexto do usuário
   schoolId?: string;
-  /**
-   * Escola informada à mão quando ela não está na lista da rede. Não vincula o
-   * usuário a nada: quem tem só este campo fica fora dos agregados por escola,
-   * até que a secretaria cadastre a escola e faça o vínculo.
-   */
   schoolNameOther?: string;
   networkId?: string;
   region?: string;
@@ -127,7 +122,8 @@ export interface QuestionnaireResponse {
   questionnaireId: string;
   userId?: string; // Opcional para respostas anônimas
   anonymousId?: string; // Para estudantes
-  schoolId: string;
+  schoolId?: string;
+  schoolNameOther?: string;
   networkId?: string;
   answers: Answer[];
   completedAt: Date;

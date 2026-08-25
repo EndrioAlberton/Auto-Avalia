@@ -12,6 +12,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SendIcon from '@mui/icons-material/Send';
+import SchoolIcon from '@mui/icons-material/School';
+import { EmptyState } from '../../components/ui/data-display/EmptyState';
 import { ProgressBar } from '../../components/ui/data-display/ProgressBar';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
@@ -112,7 +114,8 @@ export function QuestionarioPage() {
       await submitResponse({
         questionnaireId,
         userId: currentUser.uid,
-        schoolId: currentUser.schoolId ?? 'sem-escola',
+        ...(currentUser.schoolId ? { schoolId: currentUser.schoolId } : {}),
+        ...(currentUser.schoolNameOther ? { schoolNameOther: currentUser.schoolNameOther } : {}),
         ...(currentUser.networkId ? { networkId: currentUser.networkId } : {}),
         answers: answersArr,
         segment: (currentUser as any).segment?.[0] ?? null,
@@ -131,6 +134,17 @@ export function QuestionarioPage() {
       <Box display="flex" justifyContent="center" mt={8}>
         <CircularProgress sx={{ color: colors.accent }} />
       </Box>
+    );
+  }
+
+  if (!currentUser?.schoolId && !currentUser?.schoolNameOther) {
+    return (
+      <EmptyState
+        icon={<SchoolIcon />}
+        title="Informe sua escola antes de responder"
+        body="A autoavaliação é sempre lida no contexto de uma escola. Escolha a sua na lista da rede — ou informe o nome, se ela não estiver lá."
+        action={{ label: 'Ir para o meu perfil', onClick: () => navigate('/app/professor/perfil') }}
+      />
     );
   }
 

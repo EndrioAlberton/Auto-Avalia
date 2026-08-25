@@ -501,11 +501,14 @@ async function phase4_questionnaires(db) {
   return { profQId: profRef.id };
 }
 
-async function phase5_professorResponses(db, uids, schoolId, profQId) {
+// As regras exigem que a resposta seja gravada pelo próprio autor, com a escola
+// dele — daí autenticar como cada professor em vez de escrever tudo como admin.
+async function phase5_professorResponses(auth, db, uids, schoolId, profQId) {
   console.log('\n✍️   FASE 5 — Respostas dos professores');
 
   for (const resp of PROFESSOR_RESPONSES) {
     const uid = uids[resp.email];
+    await signInWithEmailAndPassword(auth, resp.email, PASSWORD);
     const ref = doc(collection(db, 'responses'));
     const completedAt = resp.monthsAgo === 0
       ? serverTimestamp()
@@ -524,6 +527,9 @@ async function phase5_professorResponses(db, uids, schoolId, profQId) {
     const tag = resp.monthsAgo === 0 ? 'agora' : `${resp.monthsAgo} mes(es) atrás`;
     console.log(`   ✅ ${resp.email.split('@')[0].padEnd(12)} [${tag}]`);
   }
+
+  // As fases seguintes voltam a precisar de admin.
+  await signInWithEmailAndPassword(auth, ADMIN_EMAIL, PASSWORD);
 }
 
 
@@ -552,7 +558,7 @@ async function main() {
   await           phase2_clean(db);
   const schoolId = await phase3_schools(db, uids);
   const { profQId } = await phase4_questionnaires(db);
-  await phase5_professorResponses(db, uids, schoolId, profQId);
+  await phase5_professorResponses(auth, db, uids, schoolId, profQId);
   await phase7_materials(db);
 
   console.log('\n═══════════════════════════════════════════════');

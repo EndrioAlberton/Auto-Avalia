@@ -71,16 +71,13 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/schools/$(schoolId));
     }
 
-    // O professor escolhe a própria escola na lista da rede, no cadastro ou no
-    // perfil. Afrouxa de propósito o modelo de convite: as levas de testes
-    // docentes entram sem depender de um gestor cadastrado em cada escola.
-    // Continua valendo só para professor e só para escola que existe — nome
-    // digitado à mão vai para `schoolNameOther`, que não vincula a lugar nenhum.
+    function callerHasSchool() {
+      return callerSchoolId() != '' || callerDoc().get('schoolNameOther', '') != '';
+    }
+
     function selfSchoolChangeAllowed() {
       let novoSchoolId = request.resource.data.get('schoolId', '');
       return fieldUnchanged('schoolId') ||
-             // '' = saiu da escola ou escolheu "Outra". Precisa vir antes de
-             // schoolExists(): exists() com id vazio é erro e nega tudo.
              novoSchoolId == '' ||
              (resource.data.get('role', '') == 'professor' && schoolExists(novoSchoolId)) ||
              invitedToSchool(novoSchoolId) ||
@@ -105,7 +102,7 @@ service cloud.firestore {
                        request.resource.data.role == 'professor';
 
       allow update: if isAuthenticated() && (
-        // 1) próprio perfil — nunca o cargo, nunca a rede, escola só por convite.
+        // 1) próprio perfil — nunca o cargo, nunca a rede.
         //    Primeiro ramo de propósito: no caso comum não faz get() extra.
         (request.auth.uid == userId &&
          fieldUnchanged('role') &&
@@ -164,7 +161,9 @@ service cloud.firestore {
         (hasRole('gestor') && belongsToSchool(resource.data.get('schoolId', '')))
       );
       allow create: if isAuthenticated() &&
-                       request.resource.data.userId == request.auth.uid;
+                       request.resource.data.userId == request.auth.uid &&
+                       callerHasSchool() &&
+                       request.resource.data.get('schoolId', '') == callerSchoolId();
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if hasRole('admin');
     }
