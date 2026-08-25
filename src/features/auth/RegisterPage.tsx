@@ -30,8 +30,6 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // A lista de escolas só é legível para quem já está autenticado, então a
-  // escolha vem depois da conta criada — não dá para fazer tudo num passo só.
   const [etapa, setEtapa] = useState<'conta' | 'escola'>('conta');
   const [usuarioCriado, setUsuarioCriado] = useState<User | null>(null);
   const [escola, setEscola] = useState<SchoolChoice>({ schoolId: '', schoolNameOther: '' });
@@ -73,7 +71,6 @@ export function RegisterPage() {
       await refreshUser();
       irParaOApp(usuarioCriado);
     } catch {
-      // A conta já existe; não vale prender a pessoa aqui — ela ajusta no perfil.
       setError('Não foi possível salvar a escola agora. Você pode escolhê-la depois, no seu perfil.');
     } finally {
       setLoading(false);

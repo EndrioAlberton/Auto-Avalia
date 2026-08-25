@@ -6,13 +6,10 @@ import { getAllSchools } from '../../services/firestoreService';
 import type { School } from '../../types';
 
 export interface SchoolChoice {
-  /** Id de uma escola da rede, ou '' quando a escolha foi "Outra". */
   schoolId: string;
-  /** Nome digitado à mão. Vazio quando a escola veio da lista. */
   schoolNameOther: string;
 }
 
-// Sentinela da opção "Outra". Id vazio nunca colide com id real de escola.
 const OUTRA = { id: '', name: 'Outra escola (não está na lista)' } as School;
 
 const GRUPO_OUTRA = 'Não listada';
@@ -21,21 +18,13 @@ interface SchoolPickerProps {
   value: SchoolChoice;
   onChange: (value: SchoolChoice) => void;
   disabled?: boolean;
-  /** Texto de apoio abaixo do seletor, quando não há erro. */
   helperText?: string;
 }
 
-/**
- * Seleção da própria escola pelo professor: lista as escolas da rede e oferece
- * "Outra", que abre um campo de texto livre. As duas saídas são exclusivas —
- * escolher da lista limpa o texto e vice-versa.
- */
 export function SchoolPicker({ value, onChange, disabled, helperText }: SchoolPickerProps) {
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
-  // Estado próprio porque "Outra" recém-escolhida ainda tem o texto vazio, e
-  // sem isso ela seria indistinguível de "nada selecionado".
   const [modoOutra, setModoOutra] = useState(value.schoolNameOther !== '');
 
   useEffect(() => {
@@ -47,13 +36,10 @@ export function SchoolPicker({ value, onChange, disabled, helperText }: SchoolPi
     return () => { cancelado = true; };
   }, []);
 
-  // O perfil carrega o usuário depois da primeira renderização.
   useEffect(() => {
     if (value.schoolNameOther !== '') setModoOutra(true);
   }, [value.schoolNameOther]);
 
-  // groupBy do Autocomplete só agrupa bem se as opções já vierem na ordem dos
-  // grupos; daí a ordenação por região antes do nome.
   const opcoes = useMemo(() => {
     const ordenadas = [...schools].sort(
       (a, b) =>

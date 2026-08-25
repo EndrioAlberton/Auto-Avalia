@@ -48,7 +48,6 @@ export function PerfilPage() {
   });
   const [dirty, setDirty] = useState(false);
 
-  // O contexto resolve o usuário depois da primeira renderização.
   useEffect(() => {
     setEscola({
       schoolId: currentUser?.schoolId ?? '',
@@ -66,8 +65,6 @@ export function PerfilPage() {
     if (!currentUser) return;
     setSaving(true);
     try {
-      // schoolId e schoolNameOther são exclusivos: gravar os dois evita sobra do
-      // valor anterior quando a pessoa troca de "Outra" para uma escola da lista.
       await updateUserProfile(currentUser.uid, {
         displayName: form.displayName,
         subjects: form.subjects,

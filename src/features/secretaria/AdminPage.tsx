@@ -45,8 +45,6 @@ export function AdminPage() {
   const [confirm, setConfirm] = useState<{ user: User; role: UserRole } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Quem digitou a escola à mão no cadastro: não está vinculado a escola nenhuma
-  // e por isso fica fora dos agregados da rede até alguém cadastrar a escola.
   const semEscolaCadastrada = (u: User) => !u.schoolId && !!u.schoolNameOther;
 
   const totalSemEscolaCadastrada = useMemo(
@@ -96,8 +94,6 @@ export function AdminPage() {
           const school = schools.find((s) => s.id === u.schoolId);
           return <Typography sx={{ fontSize: 13, color: colors.inkMuted }}>{school?.name ?? u.schoolId}</Typography>;
         }
-        // Escola digitada à mão: mostra o texto para a secretaria conseguir
-        // cadastrar a escola e refazer o vínculo depois.
         if (u.schoolNameOther) {
           return (
             <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
