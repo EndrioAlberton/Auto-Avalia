@@ -82,3 +82,6 @@ linear.app/
 todas_perguntas.md
 PRIMEIRA_ETAPA_PROJETO_FINAL.md
 PROJETO_FINAL_SIMPLES.md
+
+# Config local do Claude Code
+.claude/
