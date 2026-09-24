@@ -17,6 +17,7 @@ import { ContentCard } from '../../components/ui/data-display/ContentCard';
 import { useToast } from '../../components/ui/feedback/ToastProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUserProfile } from '../../services/firestoreService';
+import { TermoConsentimentoDialog } from '../../app/TermoConsentimentoDialog';
 import type { SchoolChoice } from '../school/SchoolPicker';
 import { SchoolPicker } from '../school/SchoolPicker';
 import { SUBJECT_OPTIONS } from '../../data/questionnaireData';
@@ -47,6 +48,7 @@ export function PerfilPage() {
     schoolNameOther: currentUser?.schoolNameOther ?? '',
   });
   const [dirty, setDirty] = useState(false);
+  const [showTermo, setShowTermo] = useState(false);
 
   useEffect(() => {
     setEscola({
@@ -135,6 +137,9 @@ export function PerfilPage() {
                 />
               </Grid>
             </Grid>
+            <Button size="small" sx={{ mt: 2, color: colors.inkMuted }} onClick={() => setShowTermo(true)}>
+              Ver termo de consentimento da pesquisa
+            </Button>
           </ContentCard>
         </Grid>
 
@@ -208,6 +213,8 @@ export function PerfilPage() {
           </ContentCard>
         </Grid>
       </Grid>
+
+      {showTermo && <TermoConsentimentoDialog onClose={() => setShowTermo(false)} />}
     </Box>
   );
 }

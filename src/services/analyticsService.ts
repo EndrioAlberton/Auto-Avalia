@@ -1,7 +1,7 @@
 // ── SERVIÇO DE ANÁLISE E CÁLCULO DE PONTUAÇÕES ───────────────────────────────
 // Converte respostas brutas do Firestore em dados de relatório
 
-import type { QuestionnaireResponse } from '../types';
+import type { QuestionnaireResponse, ResponseSummary } from '../types';
 import { DOMAIN_QUESTION_IDS, DOMAINS } from '../data/questionnaireData';
 
 // ── INTERFACES ────────────────────────────────────────────────────────────────
@@ -149,35 +149,40 @@ export function buildRadarData(
   }));
 }
 
-/** Verifica quais professores já responderam um determinado questionário */
-export function classifyTeacherResponseStatus(
-  teachers: any[],
-  responses: QuestionnaireResponse[],
-  questionnaireId: string,
-) {
-  const respondedSet = new Set(
-    responses
-      .filter(r => r.questionnaireId === questionnaireId)
-      .map(r => r.userId),
-  );
+/** Calcula a média de pontuação por domínio a partir de sumários anônimos (já pontuados) */
+export function summariesToAvgScores(summaries: ResponseSummary[]): DomainScore[] | null {
+  if (!summaries || summaries.length === 0) return null;
 
-  return teachers.map(t => ({
-    ...t,
-    status: respondedSet.has(t.uid) ? 'responded' : 'not_started',
+  const totals: Record<string, number[]> = {};
+  for (const s of summaries) {
+    for (const [domain, score] of Object.entries(s.domainScores)) {
+      if (score > 0) {
+        if (!totals[domain]) totals[domain] = [];
+        totals[domain].push(score);
+      }
+    }
+  }
+
+  return DOMAINS.map(({ key: domain, label }) => ({
+    domain,
+    label,
+    score: totals[domain]?.length > 0
+      ? parseFloat((totals[domain].reduce((a, b) => a + b, 0) / totals[domain].length).toFixed(2))
+      : 0,
   }));
 }
 
-/** Agrupa respostas por segmento e calcula médias */
-export function groupBySegment(responses: QuestionnaireResponse[]) {
-  const grouped: Record<string, QuestionnaireResponse[]> = {};
-  for (const r of responses) {
-    const seg = r.segment ?? 'Não informado';
+/** Agrupa sumários anônimos por segmento e calcula médias */
+export function groupSummariesBySegment(summaries: ResponseSummary[]) {
+  const grouped: Record<string, ResponseSummary[]> = {};
+  for (const s of summaries) {
+    const seg = s.segment ?? 'Não informado';
     if (!grouped[seg]) grouped[seg] = [];
-    grouped[seg].push(r);
+    grouped[seg].push(s);
   }
 
   return Object.entries(grouped).map(([segment, list]) => {
-    const avg = responsesToAvgScores(list);
+    const avg = summariesToAvgScores(list);
     const entry: Record<string, any> = { segment, total: list.length };
     if (avg) {
       for (const { domain, score } of avg) {

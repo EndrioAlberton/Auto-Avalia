@@ -119,7 +119,7 @@ export function QuestionarioPage() {
         ...(currentUser.networkId ? { networkId: currentUser.networkId } : {}),
         answers: answersArr,
         segment: (currentUser as any).segment?.[0] ?? null,
-      });
+      }, (currentUser as any).subjects ?? []);
       toast.success('Autoavaliação enviada com sucesso!');
       navigate('/app/professor/relatorios');
     } catch {

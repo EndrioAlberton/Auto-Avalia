@@ -15,7 +15,7 @@ import Button from '@mui/material/Button';
 
 export function InicioPage() {
   const navigate = useNavigate();
-  const { loading, school, hasSchool, teachers, schoolResponses, schoolScores, responseRate } = useGestorData();
+  const { loading, school, hasSchool, teachers, schoolScores, responseRate } = useGestorData();
 
   if (loading) {
     return (
@@ -25,7 +25,7 @@ export function InicioPage() {
     );
   }
 
-  const respondedCount = new Set(schoolResponses.map((r: any) => r.userId)).size;
+  const respondedCount = teachers.filter((t) => (t as any).respondedQuestionnaire).length;
 
   const barData = schoolScores
     ? DOMAINS.map((d) => ({

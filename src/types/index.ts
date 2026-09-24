@@ -24,12 +24,15 @@ export interface User {
   displayName: string;
   role: UserRole;
   photoURL?: string;
-  // Campos opcionais para acesso rápido ao contexto do usuário
   schoolId?: string;
   schoolNameOther?: string;
   networkId?: string;
   region?: string;
   district?: string;
+  tcleAceito?: boolean;
+  tcleAceitoEm?: Date;
+  /** true assim que o professor envia a 1ª resposta — gestor/secretaria usam isso para "quem respondeu", sem ver o conteúdo. */
+  respondedQuestionnaire?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -130,6 +133,18 @@ export interface QuestionnaireResponse {
   segment?: EducationSegment;
 }
 
+export interface ResponseSummary {
+  id: string;
+  questionnaireId: string;
+  schoolId?: string;
+  schoolNameOther?: string;
+  networkId?: string;
+  segment?: EducationSegment;
+  subjects: string[];
+  domainScores: Record<string, number>;
+  completedAt: Date;
+}
+
 // Relatório
 export interface Report {
   id: string;
@@ -187,7 +202,6 @@ export interface Invitation {
   status: 'pending' | 'accepted' | 'expired';
   token: string;
   message?: string;
-  /** Definido quando o convidado abre o app e vê o convite — indica que ele já tem conta. */
   viewedAt?: Date;
   createdAt: Date;
   expiresAt: Date;

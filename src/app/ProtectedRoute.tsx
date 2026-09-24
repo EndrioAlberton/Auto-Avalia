@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
+import { TermoConsentimentoDialog } from './TermoConsentimentoDialog';
 
 const routePermissions: Record<string, UserRole[]> = {
   '/app/professor': [UserRole.PROFESSOR],
@@ -27,6 +28,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (matchedEntry && !matchedEntry[1].includes(currentUser.role as UserRole)) {
     return <Navigate to="/" replace />;
+  }
+  if (currentUser.role === UserRole.PROFESSOR && !currentUser.tcleAceito) {
+    return <TermoConsentimentoDialog />;
   }
 
   return <>{children}</>;

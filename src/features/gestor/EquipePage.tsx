@@ -39,7 +39,7 @@ interface TeacherRow extends User {
 export function EquipePage() {
   const { currentUser } = useAuth();
   const toast = useToast();
-  const { loading, teachers, invitations, schoolResponses, refreshData } = useGestorData();
+  const { loading, teachers, invitations, refreshData } = useGestorData();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMsg, setInviteMsg] = useState('');
@@ -47,8 +47,6 @@ export function EquipePage() {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuTarget, setMenuTarget] = useState<TeacherRow | null>(null);
   const [acting, setActing] = useState(false);
-
-  const respondedSet = new Set(schoolResponses.map((r: any) => r.userId));
 
   const teacherRows: TeacherRow[] = teachers.map((t) => ({ ...t }));
 
@@ -158,8 +156,8 @@ export function EquipePage() {
     }
   };
 
-  const respondedCount = teachers.filter((t) => respondedSet.has(t.uid)).length;
-  const pendingCount = teachers.filter((t) => !respondedSet.has(t.uid)).length;
+  const respondedCount = teachers.filter((t) => (t as any).respondedQuestionnaire).length;
+  const pendingCount = teachers.length - respondedCount;
 
   return (
     <Box>

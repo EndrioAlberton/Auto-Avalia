@@ -11,6 +11,7 @@
     "lint:fix": "eslint \"src/**/*.ts\" \"src/**/*.tsx\" --fix",
     "preview": "vite preview",
     "seed": "node scripts/seed.mjs",
+    "unseed": "node scripts/unseed.mjs",
     "cy:open": "cypress open",
     "cy:run": "cypress run",
     "cy:run:e2e": "cypress run --e2e",

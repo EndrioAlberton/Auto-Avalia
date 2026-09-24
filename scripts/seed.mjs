@@ -1,17 +1,18 @@
 /**
  * Autoavalia — Seed Completo
  *
- * O que faz:
+ * O que faz — tudo em upsert (cria se não existe, sobrescreve se já existe),
+ * NUNCA apaga coleção nenhuma. Seguro rodar contra um projeto com dado real:
  *   1.  Garante que todos os usuários existem no Firebase Auth + Firestore
  *       (sempre como professor — é o único cargo que o autocadastro permite)
  *   1b. Autentica como admin e atribui os cargos reais (secretaria, gestor)
- *   2.  Limpa coleções: schools, questionnaires, responses,
- *       support_materials, invitations
- *   3.  Cria as 102 escolas próprias da RME-POA e lota gestor + 5 professores
- *       em uma delas
- *   4.  Cria questionários de professor e estudante
- *   5.  Cria respostas completas de cada professor (Ana tem 2 = evolução)
- *   7.  Cria materiais de apoio
+ *   3.  Cria as 102 escolas próprias da RME-POA (só as que ainda não existem)
+ *       e lota gestor + 5 professores de demo em uma delas
+ *   4.  Cria/atualiza o questionário de professor (ID determinístico)
+ *   5.  Cria/atualiza as respostas de demo de cada professor (Ana tem 2 =
+ *       evolução), com ID determinístico — reexecutar sobrescreve as mesmas,
+ *       não duplica
+ *   7.  Cria/atualiza materiais de apoio (ID determinístico)
  *
  * Como usar:
  *   npm run seed
@@ -52,7 +53,6 @@ import {
   getDoc,
   getDocs,
   updateDoc,
-  deleteDoc,
   serverTimestamp,
   Timestamp,
   writeBatch,
@@ -313,11 +313,31 @@ function answersFromMap(map) {
   return Object.entries(map).map(([questionId, value]) => ({ questionId, value }));
 }
 
-async function clearCollection(db, name) {
-  const snap = await getDocs(collection(db, name));
-  if (snap.empty) { console.log(`   ℹ️  ${name}: vazia`); return; }
-  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
-  console.log(`   🗑️  ${name}: ${snap.docs.length} doc(s) removidos`);
+// Espelha DOMAIN_QUESTION_IDS / answersToScores de src/data/questionnaireData.ts
+// e src/services/analyticsService.ts — o seed roda fora do bundle da app, então
+// não dá pra importar direto; mudou lá, muda aqui também.
+const DOMAIN_QUESTION_IDS = {
+  tk: ['tk1', 'tk2'],
+  pk: ['pk1', 'pk2'],
+  ck: ['ck1', 'ck2'],
+  pck: ['pck1', 'pck2'],
+  tck: ['tck1', 'tck2'],
+  tpk: ['tpk1', 'tpk2'],
+  tpack: ['tpack1', 'tpack2', 'tpack3', 'tpack4'],
+  afr: ['afr1', 'afr2'],
+};
+
+function answersToDomainScores(answersMap) {
+  const out = {};
+  for (const [domain, ids] of Object.entries(DOMAIN_QUESTION_IDS)) {
+    const vals = ids.map((id) => answersMap[id]).filter((v) => v !== undefined && v > 0);
+    out[domain] = vals.length > 0 ? parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)) : 0;
+  }
+  return out;
+}
+
+function slugify(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
 const ADMIN_EMAIL = 'admin@self.edu.br';
@@ -419,15 +439,6 @@ async function phase1b_roles(auth, db, uids) {
   }
 }
 
-async function phase2_clean(db) {
-  console.log('\n🧹  FASE 2 — Limpeza');
-
-  // anonymous_responses fica de fora: nenhuma fase as recria, então limpá-las
-  // seria perda de dados. O comentário no topo do arquivo já mentia sobre isso.
-  const cols = ['schools','questionnaires','responses','support_materials','invitations'];
-  for (const c of cols) await clearCollection(db, c);
-}
-
 async function phase3_schools(db, uids) {
   console.log('\n🏫  FASE 3 — Escolas da RME-POA');
 
@@ -435,19 +446,24 @@ async function phase3_schools(db, uids) {
   const demo = ESCOLAS_POA.find((e) => e.id === ESCOLA_DEMO_ID);
   if (!demo) throw new Error(`Escola de demonstração não encontrada: ${ESCOLA_DEMO_ID}`);
 
-  // Ids determinísticos (slug do nome) em vez de aleatórios: assim reexecutar o
-  // seed reescreve as mesmas escolas em vez de multiplicá-las.
-  const batch = writeBatch(db);
-  for (const { id, ...escola } of ESCOLAS_POA) {
-    batch.set(doc(db, 'schools', id), {
-      ...escola,
-      networkId: NETWORK_ID,
-      ...(id === ESCOLA_DEMO_ID ? { gestorId: gestorUid } : {}),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+  // Ids determinísticos (slug do nome), mas só cria as que ainda não existem —
+  // nunca sobrescreve, pra não perder edição real feita pelo gestor na escola.
+  const existing = new Set((await getDocs(collection(db, 'schools'))).docs.map((d) => d.id));
+  const faltantes = ESCOLAS_POA.filter((e) => !existing.has(e.id));
+
+  if (faltantes.length > 0) {
+    const batch = writeBatch(db);
+    for (const { id, ...escola } of faltantes) {
+      batch.set(doc(db, 'schools', id), {
+        ...escola,
+        networkId: NETWORK_ID,
+        ...(id === ESCOLA_DEMO_ID ? { gestorId: gestorUid } : {}),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    await batch.commit();
   }
-  await batch.commit();
 
   const porSigla = {};
   for (const e of ESCOLAS_POA) {
@@ -455,7 +471,7 @@ async function phase3_schools(db, uids) {
     porSigla[sigla] = (porSigla[sigla] ?? 0) + 1;
   }
   const resumo = Object.entries(porSigla).map(([s, n]) => `${n} ${s}`).join(' · ');
-  console.log(`   ✅ ${ESCOLAS_POA.length} escolas criadas (${resumo})`);
+  console.log(`   ✅ ${faltantes.length} escola(s) criada(s) agora, ${existing.size} já existiam (${resumo})`);
   console.log(`   🎓 Escola de demonstração: ${demo.name}`);
 
   // Vincula gestor e professores à escola de demonstração
@@ -479,6 +495,10 @@ async function phase3_schools(db, uids) {
   return ESCOLA_DEMO_ID;
 }
 
+// ID determinístico: reexecutar atualiza o mesmo questionário de demo em vez
+// de criar um segundo "active: true" concorrente para o mesmo targetRole.
+const QUESTIONNAIRE_SEED_ID = 'seed-professor-tpack';
+
 async function phase4_questionnaires(db) {
   console.log('\n📋  FASE 4 — Questionários');
 
@@ -486,17 +506,18 @@ async function phase4_questionnaires(db) {
   const sem = now.getMonth() < 6 ? '1º Semestre' : '2º Semestre';
   const year = now.getFullYear();
 
-  const profRef = doc(collection(db, 'questionnaires'));
+  const profRef = doc(db, 'questionnaires', QUESTIONNAIRE_SEED_ID);
+  const existed = (await getDoc(profRef)).exists();
   await setDoc(profRef, {
     title: `Diagnóstico TPACK – ${sem} ${year}`,
     description: 'Autoavaliação por domínios TPACK: TK, PK, CK, PCK, TCK, TPK, TPACK, AFR.',
     targetRole: 'professor',
     questions: PROFESSOR_QUESTIONS,
     active: true,
-    createdAt: serverTimestamp(),
+    ...(existed ? {} : { createdAt: serverTimestamp() }),
     updatedAt: serverTimestamp(),
-  });
-  console.log(`   ✅ Questionário professor: ${profRef.id.slice(0,8)}…`);
+  }, { merge: true });
+  console.log(`   ✅ Questionário professor: ${profRef.id}`);
 
   return { profQId: profRef.id };
 }
@@ -508,13 +529,25 @@ async function phase5_professorResponses(auth, db, uids, schoolId, profQId) {
 
   for (const resp of PROFESSOR_RESPONSES) {
     const uid = uids[resp.email];
+    const userDef = USERS.find((u) => u.email === resp.email);
     await signInWithEmailAndPassword(auth, resp.email, PASSWORD);
-    const ref = doc(collection(db, 'responses'));
     const completedAt = resp.monthsAgo === 0
       ? serverTimestamp()
       : monthsAgo(resp.monthsAgo);
 
-    await setDoc(ref, {
+    // ID determinístico (email + monthsAgo): reexecutar sobrescreve a mesma
+    // resposta de demo em vez de acumular uma nova a cada rodada do seed.
+    const seedId = `seed-${resp.email.split('@')[0]}-${resp.monthsAgo}`;
+    const summaryRef = doc(db, 'responseSummaries', seedId);
+    // responseSummaries é anônimo por design — regras só deixam admin
+    // atualizar um que já existe (ninguém "dono" pra provar que é seu de
+    // novo). Então só cria na primeira vez; reexecuções pulam o sumário já
+    // existente e só atualizam a resposta bruta (essa sim, o próprio autor
+    // pode sobrescrever).
+    const summaryExists = (await getDoc(summaryRef)).exists();
+
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'responses', seedId), {
       questionnaireId: profQId,
       userId: uid,
       schoolId,
@@ -523,9 +556,22 @@ async function phase5_professorResponses(auth, db, uids, schoolId, profQId) {
       answers: answersFromMap(resp.answers),
       completedAt,
     });
+    if (!summaryExists) {
+      batch.set(summaryRef, {
+        questionnaireId: profQId,
+        schoolId,
+        networkId: NETWORK_ID,
+        segment: resp.segment ?? null,
+        subjects: userDef?.subjects ?? [],
+        domainScores: answersToDomainScores(resp.answers),
+        completedAt,
+      });
+    }
+    batch.update(doc(db, 'users', uid), { respondedQuestionnaire: true });
+    await batch.commit();
 
     const tag = resp.monthsAgo === 0 ? 'agora' : `${resp.monthsAgo} mes(es) atrás`;
-    console.log(`   ✅ ${resp.email.split('@')[0].padEnd(12)} [${tag}]`);
+    console.log(`   ✅ ${resp.email.split('@')[0].padEnd(12)} [${tag}]${summaryExists ? ' (sumário já existia)' : ''}`);
   }
 
   // As fases seguintes voltam a precisar de admin.
@@ -536,11 +582,16 @@ async function phase5_professorResponses(auth, db, uids, schoolId, profQId) {
 async function phase7_materials(db) {
   console.log('\n📚  FASE 7 — Materiais de apoio');
 
+  // ID determinístico (slug do título): reexecutar atualiza o mesmo material
+  // em vez de duplicar.
+  const batch = writeBatch(db);
   for (const m of SUPPORT_MATERIALS) {
-    const ref = doc(collection(db, 'support_materials'));
-    await setDoc(ref, { ...m, createdAt: serverTimestamp() });
+    const ref = doc(db, 'support_materials', `seed-${slugify(m.title)}`);
+    const existed = (await getDoc(ref)).exists();
+    batch.set(ref, { ...m, ...(existed ? {} : { createdAt: serverTimestamp() }) }, { merge: true });
   }
-  console.log(`   ✅ ${SUPPORT_MATERIALS.length} materiais criados`);
+  await batch.commit();
+  console.log(`   ✅ ${SUPPORT_MATERIALS.length} materiais criados/atualizados`);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -555,7 +606,6 @@ async function main() {
 
   const uids    = await phase1_users(auth, db);
   await           phase1b_roles(auth, db, uids);
-  await           phase2_clean(db);
   const schoolId = await phase3_schools(db, uids);
   const { profQId } = await phase4_questionnaires(db);
   await phase5_professorResponses(auth, db, uids, schoolId, profQId);

@@ -2,17 +2,17 @@ import { describe, it, expect } from 'vitest';
 import {
   answersToScores,
   responsesToAvgScores,
+  summariesToAvgScores,
   buildEvolutionData,
   getStrengths,
   getImprovements,
   buildComparisonData,
   overallScore,
   formatFirestoreDate,
-  classifyTeacherResponseStatus,
-  groupBySegment,
+  groupSummariesBySegment,
 } from './analyticsService';
 import type { DomainScore } from './analyticsService';
-import type { QuestionnaireResponse } from '../types';
+import type { QuestionnaireResponse, ResponseSummary } from '../types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,6 +26,21 @@ function makeResponse(
     userId: 'user-default',
     schoolId: 'school-default',
     answers: Object.entries(rawAnswers).map(([questionId, value]) => ({ questionId, value })),
+    completedAt: new Date(),
+    ...overrides,
+  };
+}
+
+function makeSummary(
+  domainScores: Record<string, number>,
+  overrides: Partial<ResponseSummary> = {},
+): ResponseSummary {
+  return {
+    id: 'summary-id',
+    questionnaireId: 'q-default',
+    schoolId: 'school-default',
+    subjects: [],
+    domainScores,
     completedAt: new Date(),
     ...overrides,
   };
@@ -231,47 +246,45 @@ describe('formatFirestoreDate', () => {
   });
 });
 
-// ── classifyTeacherResponseStatus ─────────────────────────────────────────────
+// ── summariesToAvgScores ───────────────────────────────────────────────────────
 
-describe('classifyTeacherResponseStatus', () => {
-  const teachers = [
-    { uid: 'prof1', name: 'Ana' },
-    { uid: 'prof2', name: 'Bruno' },
-  ];
-  const responses = [makeResponse({}, { userId: 'prof1', questionnaireId: 'q1' })];
-
-  it('marca professor que respondeu como "responded"', () => {
-    const result = classifyTeacherResponseStatus(teachers, responses, 'q1');
-    expect(result.find(t => t.uid === 'prof1')?.status).toBe('responded');
+describe('summariesToAvgScores', () => {
+  it('retorna null para array vazio', () => {
+    expect(summariesToAvgScores([])).toBeNull();
   });
 
-  it('marca professor que não respondeu como "not_started"', () => {
-    const result = classifyTeacherResponseStatus(teachers, responses, 'q1');
-    expect(result.find(t => t.uid === 'prof2')?.status).toBe('not_started');
+  it('calcula a média correta entre múltiplos sumários', () => {
+    const s1 = makeSummary({ tk: 4 });
+    const s2 = makeSummary({ tk: 2 });
+    const avg = summariesToAvgScores([s1, s2]);
+    const tk = avg?.find(s => s.domain === 'tk');
+    expect(tk?.score).toBe(3);
   });
 
-  it('ignora respostas de outro questionário', () => {
-    const result = classifyTeacherResponseStatus(teachers, responses, 'q-outro');
-    expect(result.every(t => t.status === 'not_started')).toBe(true);
+  it('ignora domínios com score 0 no sumário', () => {
+    const s = makeSummary({ tk: 0, pk: 3 });
+    const avg = summariesToAvgScores([s]);
+    expect(avg?.find(s => s.domain === 'tk')?.score).toBe(0);
+    expect(avg?.find(s => s.domain === 'pk')?.score).toBe(3);
   });
 });
 
-// ── groupBySegment ────────────────────────────────────────────────────────────
+// ── groupSummariesBySegment ────────────────────────────────────────────────────
 
-describe('groupBySegment', () => {
-  it('agrupa respostas pelo campo segment', () => {
-    const r1 = makeResponse({ tk1: 4 }, { segment: 'anos_iniciais' as any });
-    const r2 = makeResponse({ tk1: 2 }, { segment: 'anos_iniciais' as any });
-    const r3 = makeResponse({ tk1: 5 }, { segment: 'ensino_medio' as any });
-    const result = groupBySegment([r1, r2, r3]);
+describe('groupSummariesBySegment', () => {
+  it('agrupa sumários pelo campo segment', () => {
+    const s1 = makeSummary({ tk: 4 }, { segment: 'anos_iniciais' as any });
+    const s2 = makeSummary({ tk: 2 }, { segment: 'anos_iniciais' as any });
+    const s3 = makeSummary({ tk: 5 }, { segment: 'ensino_medio' as any });
+    const result = groupSummariesBySegment([s1, s2, s3]);
     expect(result).toHaveLength(2);
     const ai = result.find(r => r.segment === 'anos_iniciais');
     expect(ai?.total).toBe(2);
   });
 
-  it('usa "Não informado" para respostas sem segment', () => {
-    const r = makeResponse({});
-    const result = groupBySegment([r]);
+  it('usa "Não informado" para sumários sem segment', () => {
+    const s = makeSummary({});
+    const result = groupSummariesBySegment([s]);
     expect(result[0].segment).toBe('Não informado');
   });
 });

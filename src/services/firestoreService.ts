@@ -12,12 +12,14 @@ import {
   limit,
   serverTimestamp,
   Timestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import type {
   School,
   Questionnaire,
   QuestionnaireResponse,
+  ResponseSummary,
   Report,
   Invitation,
   SupportMaterial,
@@ -27,6 +29,7 @@ import {
 } from '../types';
 import { PROFESSOR_QUESTIONS, DEFAULT_SUPPORT_MATERIALS } from '../data/questionnaireData';
 import { invitationId } from '../utils/invitationUtils';
+import { answersToScores } from './analyticsService';
 
 export { invitationId };
 
@@ -236,12 +239,45 @@ export const getOrSeedQuestionnaire = async (role: UserRole): Promise<Questionna
 // RESPOSTAS (PROFESSORES — autenticadas)
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Grava a resposta bruta (legível só pelo autor e por admin), um sumário
+ * anônimo em paralelo (mesma escola/etapa/disciplinas + pontuação por domínio,
+ * sem userId — é o que gestor/secretaria enxergam) e marca o professor como
+ * "já respondeu" no próprio perfil, sem expor o conteúdo.
+ */
 export const submitResponse = async (
   data: Omit<QuestionnaireResponse, 'id' | 'completedAt'>,
+  subjects: string[] = [],
 ): Promise<string> => {
-  const ref = doc(collection(db, 'responses'));
-  await setDoc(ref, stripUndefined({ ...data, completedAt: serverTimestamp() }));
-  return ref.id;
+  const batch = writeBatch(db);
+
+  const responseRef = doc(collection(db, 'responses'));
+  batch.set(responseRef, stripUndefined({ ...data, completedAt: serverTimestamp() }));
+
+  const answersMap: Record<string, number> = {};
+  for (const a of data.answers) answersMap[a.questionId] = Number(a.value);
+  const domainScores = Object.fromEntries(
+    answersToScores(answersMap).map(({ domain, score }) => [domain, score]),
+  );
+
+  const summaryRef = doc(collection(db, 'responseSummaries'));
+  batch.set(summaryRef, stripUndefined({
+    questionnaireId: data.questionnaireId,
+    schoolId: data.schoolId,
+    schoolNameOther: data.schoolNameOther,
+    networkId: data.networkId,
+    segment: data.segment,
+    subjects,
+    domainScores,
+    completedAt: serverTimestamp(),
+  }));
+
+  if (data.userId) {
+    batch.update(doc(db, 'users', data.userId), { respondedQuestionnaire: true });
+  }
+
+  await batch.commit();
+  return responseRef.id;
 };
 
 const sortByCompletedAtDesc = (docs: QuestionnaireResponse[]) =>
@@ -270,76 +306,11 @@ export const getUserResponses = async (userId: string): Promise<QuestionnaireRes
   }
 };
 
-export const getSchoolResponses = async (schoolId: string): Promise<QuestionnaireResponse[]> => {
-  try {
-    const q = query(
-      collection(db, 'responses'),
-      where('schoolId', '==', schoolId),
-      orderBy('completedAt', 'desc'),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
-  } catch {
-    // Fallback: busca sem orderBy
-    const q = query(collection(db, 'responses'), where('schoolId', '==', schoolId));
-    const snap = await getDocs(q);
-    return sortByCompletedAtDesc(
-      snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse))
-    );
-  }
-};
-
-/** Respostas de uma escola para um questionário específico */
-export const getSchoolResponsesByQuestionnaire = async (
-  schoolId: string,
-  questionnaireId: string,
-): Promise<QuestionnaireResponse[]> => {
-  const q = query(
-    collection(db, 'responses'),
-    where('schoolId', '==', schoolId),
-    where('questionnaireId', '==', questionnaireId),
-  );
+/** Sumários anônimos (sem userId) de uma escola — o que gestor/secretaria enxergam */
+export const getSchoolResponseSummaries = async (schoolId: string): Promise<ResponseSummary[]> => {
+  const q = query(collection(db, 'responseSummaries'), where('schoolId', '==', schoolId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
-};
-
-/** Verifica se um usuário já respondeu um questionário */
-export const getUserLatestResponse = async (
-  userId: string,
-  questionnaireId: string,
-): Promise<QuestionnaireResponse | null> => {
-  try {
-    const q = query(
-      collection(db, 'responses'),
-      where('userId', '==', userId),
-      where('questionnaireId', '==', questionnaireId),
-      orderBy('completedAt', 'desc'),
-      limit(1),
-    );
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    return { id: snap.docs[0].id, ...snap.docs[0].data() } as QuestionnaireResponse;
-  } catch {
-    // Fallback sem orderBy
-    const q = query(
-      collection(db, 'responses'),
-      where('userId', '==', userId),
-      where('questionnaireId', '==', questionnaireId),
-    );
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const docs = sortByCompletedAtDesc(
-      snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse))
-    );
-    return docs[0] ?? null;
-  }
-};
-
-/** Respostas de toda a rede (networkId) */
-export const getNetworkResponses = async (networkId: string): Promise<QuestionnaireResponse[]> => {
-  const q = query(collection(db, 'responses'), where('networkId', '==', networkId));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as QuestionnaireResponse));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as ResponseSummary));
 };
 
 
@@ -482,21 +453,3 @@ export const getUserReports = async (userId: string): Promise<Report[]> => {
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Report));
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ESTATÍSTICAS RÁPIDAS
-// ══════════════════════════════════════════════════════════════════════════════
-
-/** Retorna taxa de resposta de uma escola: { responded, total, rate } */
-export const getSchoolResponseRate = async (
-  schoolId: string,
-  questionnaireId: string,
-): Promise<{ responded: number; total: number; rate: number }> => {
-  const [teachers, responses] = await Promise.all([
-    getTeachersBySchool(schoolId),
-    getSchoolResponsesByQuestionnaire(schoolId, questionnaireId),
-  ]);
-  const respondedIds = new Set(responses.map(r => r.userId));
-  const responded = teachers.filter(t => respondedIds.has(t.uid)).length;
-  const total = teachers.length;
-  return { responded, total, rate: total > 0 ? Math.round((responded / total) * 100) : 0 };
-};

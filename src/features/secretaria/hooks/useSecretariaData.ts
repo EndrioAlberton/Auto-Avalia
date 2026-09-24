@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import type { School, User, QuestionnaireResponse } from '../../../types';
-import { getAllSchools, getAllUsers, getSchoolResponses, getTeachersBySchool } from '../../../services/firestoreService';
+import type { School, User } from '../../../types';
+import { getAllSchools, getAllUsers, getSchoolResponseSummaries, getTeachersBySchool } from '../../../services/firestoreService';
 import type {
   DomainScore} from '../../../services/analyticsService';
 import {
-  responsesToAvgScores,
-  answersToScores
+  summariesToAvgScores
 } from '../../../services/analyticsService';
 import { SUBJECT_OPTIONS, DOMAIN_LABELS } from '../../../data/questionnaireData';
 
@@ -69,27 +68,25 @@ export function useSecretariaData(): SecretariaData {
         setSchools(schoolList);
         setAllUsers(users);
 
-        // Carrega respostas e professores de cada escola em paralelo
+        // Carrega sumários anônimos e professores de cada escola em paralelo
         const schoolDataList = await Promise.all(
           schoolList.map(async (school) => {
-            const [responses, teachers] = await Promise.all([
-              getSchoolResponses(school.id),
+            const [summaries, teachers] = await Promise.all([
+              getSchoolResponseSummaries(school.id),
               getTeachersBySchool(school.id),
             ]);
-            return { school, responses, teachers };
+            return { school, summaries, teachers };
           }),
         );
 
         if (cancelled) return;
 
         // Agrega stats por escola
-        const stats: SchoolWithStats[] = schoolDataList.map(({ school, responses, teachers }) => {
-          const respondedUids = new Set(responses.map((r) => r.userId));
+        const stats: SchoolWithStats[] = schoolDataList.map(({ school, summaries, teachers }) => {
+          const respondedCount = teachers.filter((t) => (t as any).respondedQuestionnaire).length;
           const responseRate =
-            teachers.length > 0
-              ? Math.round((teachers.filter((t) => respondedUids.has(t.uid)).length / teachers.length) * 100)
-              : 0;
-          const avgScores = responsesToAvgScores(responses) ?? [];
+            teachers.length > 0 ? Math.round((respondedCount / teachers.length) * 100) : 0;
+          const avgScores = summariesToAvgScores(summaries) ?? [];
           const validScores = avgScores.filter((d) => d.score > 0);
           const avgScore =
             validScores.length > 0
@@ -99,58 +96,30 @@ export function useSecretariaData(): SecretariaData {
             ...school,
             responseRate,
             avgScore,
-            respondedCount: new Set(responses.map((r) => r.userId)).size,
+            respondedCount,
             teachersCount: teachers.length,
             avgScores,
           };
         });
 
-        // Calcula scores individuais por professor apenas para alimentar a agregação
-        // por disciplina abaixo — nome/identidade nunca sai deste escopo.
-        const perTeacherScores = schoolDataList.flatMap(({ responses, teachers }) => {
-          const byTeacher = new Map<string, QuestionnaireResponse[]>();
-          for (const r of responses) {
-            if (!r.userId) continue;
-            if (!byTeacher.has(r.userId)) byTeacher.set(r.userId, []);
-            byTeacher.get(r.userId)!.push(r);
-          }
-
-          return teachers.map((teacher) => {
-            const teacherResponses = byTeacher.get(teacher.uid) ?? [];
-            const latest = teacherResponses.sort((a, b) => {
-              const tsA = (a.completedAt as any)?.seconds ?? 0;
-              const tsB = (b.completedAt as any)?.seconds ?? 0;
-              return tsB - tsA;
-            })[0];
-
-            let scores: DomainScore[] | null = null;
-            if (latest) {
-              const map: Record<string, number> = {};
-              for (const a of latest.answers) map[a.questionId] = Number(a.value);
-              scores = answersToScores(map);
-            }
-
-            return {
-              subjects: (teacher as any).subjects as string[] | undefined,
-              hasResponded: !!latest,
-              scores,
-            };
-          });
-        });
-
-        // Agrega por disciplina — nenhum campo de identidade é mantido no resultado
+        // Agrega por disciplina direto dos sumários anônimos — sem join de
+        // identidade. ponytail: como o sumário não carrega userId, um
+        // professor que respondeu mais de uma vez (evolução) entra com todas
+        // as submissões aqui, não só a mais recente; upgrade só voltando a
+        // vincular por identidade, que é o que estamos evitando.
         const disciplineAccum: Record<string, { label: string; domainSums: Record<string, number[]>; count: number }> = {};
-        for (const t of perTeacherScores) {
-          if (!t.hasResponded || !t.scores) continue;
-          for (const sub of t.subjects ?? []) {
-            const opt = SUBJECT_OPTIONS.find((o) => o.value === sub);
-            if (!opt) continue;
-            if (!disciplineAccum[sub]) disciplineAccum[sub] = { label: opt.label, domainSums: {}, count: 0 };
-            disciplineAccum[sub].count++;
-            for (const { domain, score } of t.scores) {
-              if (score <= 0) continue;
-              if (!disciplineAccum[sub].domainSums[domain]) disciplineAccum[sub].domainSums[domain] = [];
-              disciplineAccum[sub].domainSums[domain].push(score);
+        for (const { summaries } of schoolDataList) {
+          for (const s of summaries) {
+            for (const sub of s.subjects ?? []) {
+              const opt = SUBJECT_OPTIONS.find((o) => o.value === sub);
+              if (!opt) continue;
+              if (!disciplineAccum[sub]) disciplineAccum[sub] = { label: opt.label, domainSums: {}, count: 0 };
+              disciplineAccum[sub].count++;
+              for (const [domain, score] of Object.entries(s.domainScores)) {
+                if (score <= 0) continue;
+                if (!disciplineAccum[sub].domainSums[domain]) disciplineAccum[sub].domainSums[domain] = [];
+                disciplineAccum[sub].domainSums[domain].push(score);
+              }
             }
           }
         }

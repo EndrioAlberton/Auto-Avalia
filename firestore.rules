@@ -148,24 +148,43 @@ service cloud.firestore {
     }
 
     // ── Respostas (professores — autenticadas) ────────────────────────────────
+    // Contém userId: só o próprio autor e admin leem o bruto. Gestor/secretaria
+    // usam a coleção responseSummaries (sem identidade) abaixo.
     match /responses/{responseId} {
       allow get: if isAuthenticated() &&
-                   (resource.data.userId == request.auth.uid ||
-                    hasAnyRole(['gestor', 'secretaria', 'admin']));
+                   (resource.data.userId == request.auth.uid || hasRole('admin'));
       // Regras de list são avaliadas por documento retornado: a query passa
       // apenas se todo resultado passar. Substitui o antigo
       // "allow list: if isAuthenticated()", que dependia de filtro no cliente.
-      allow list: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        hasAnyRole(['secretaria', 'admin']) ||
-        (hasRole('gestor') && belongsToSchool(resource.data.get('schoolId', '')))
-      );
+      allow list: if isAuthenticated() &&
+                    (resource.data.userId == request.auth.uid || hasRole('admin'));
       allow create: if isAuthenticated() &&
                        request.resource.data.userId == request.auth.uid &&
                        callerHasSchool() &&
                        request.resource.data.get('schoolId', '') == callerSchoolId();
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if hasRole('admin');
+    }
+
+    // ── Sumários de resposta (anônimos) ───────────────────────────────────────
+    // Espelho de responses sem userId nem respostas por pergunta — colegas da
+    // mesma escola, gestor da escola e secretaria/admin da rede podem ler,
+    // porque não há identidade para vazar.
+    match /responseSummaries/{summaryId} {
+      // resource == null primeiro: get() num doc que ainda não existe faz
+      // resource.data estourar erro (não "não encontrado"), o que o SDK
+      // cliente vê como permission-denied — precisa permitir explicitamente
+      // ler o "nada" antes de checar o schoolId de um documento que existe.
+      allow get, list: if isAuthenticated() && (
+        resource == null ||
+        hasAnyRole(['secretaria', 'admin']) ||
+        belongsToSchool(resource.data.get('schoolId', ''))
+      );
+      allow create: if isAuthenticated() &&
+                       !('userId' in request.resource.data) &&
+                       callerHasSchool() &&
+                       request.resource.data.get('schoolId', '') == callerSchoolId();
+      allow update, delete: if hasRole('admin');
     }
 
     // ── Respostas anônimas (estudantes) ───────────────────────────────────────

@@ -17,18 +17,18 @@ import { DomainRadarChart } from '../analytics/charts/DomainRadarChart';
 import { DomainBarChart } from '../analytics/charts/DomainBarChart';
 import { useGestorData } from './hooks/useGestorData';
 import { DOMAINS, KNOWLEDGE_AREAS, SUBJECT_OPTIONS } from '../../data/questionnaireData';
-import { groupBySegment, formatSegment, responsesToAvgScores } from '../../services/analyticsService';
+import { groupSummariesBySegment, formatSegment, summariesToAvgScores } from '../../services/analyticsService';
 import { colors, radius } from '../../components/ui/tokens';
 import { exportCsv } from '../../utils/exportCsv';
 
 export function RelatoriosPage() {
   const [tab, setTab] = useState(0);
-  const { loading, school, teachers, schoolResponses, schoolScores } = useGestorData();
+  const { loading, school, teachers, schoolSummaries, schoolScores } = useGestorData();
 
   const etapaOptions = useMemo(
-    () => Array.from(new Set(schoolResponses.map((r) => r.segment ?? 'Não informado')))
+    () => Array.from(new Set(schoolSummaries.map((s) => s.segment ?? 'Não informado')))
       .map((seg) => ({ value: seg, label: formatSegment(seg) })),
-    [schoolResponses],
+    [schoolSummaries],
   );
   const [selectedEtapas, setSelectedEtapas] = useState<string[] | null>(null);
   const activeEtapas = selectedEtapas ?? etapaOptions.map((o) => o.value);
@@ -51,13 +51,12 @@ export function RelatoriosPage() {
   }
 
   // ── Panorama de participação ───────────────────────────────────────────────
-  const respondedUids = new Set(schoolResponses.map((r) => r.userId));
-  const respondedCount = teachers.filter((t) => respondedUids.has(t.uid)).length;
+  const respondedCount = teachers.filter((t) => (t as any).respondedQuestionnaire).length;
   const totalCount = teachers.length;
   const pct = totalCount > 0 ? Math.round((respondedCount / totalCount) * 100) : 0;
 
   // ── Dados por etapa de ensino (filtrados) ─────────────────────────────────
-  const hasData = schoolResponses.length > 0;
+  const hasData = schoolSummaries.length > 0;
 
   const barData = DOMAINS.map((d) => ({
     domain: d.key,
@@ -65,31 +64,27 @@ export function RelatoriosPage() {
     escola: schoolScores?.find((s) => s.domain === d.key)?.score ?? 0,
   }));
 
-  const segmentResponses = schoolResponses.filter((r) => activeEtapas.includes(r.segment ?? 'Não informado'));
+  const segmentSummaries = schoolSummaries.filter((s) => activeEtapas.includes(s.segment ?? 'Não informado'));
 
-  const segmentData = groupBySegment(segmentResponses).map((sg) => ({
+  const segmentData = groupSummariesBySegment(segmentSummaries).map((sg) => ({
     domain: sg.segment,
     label: formatSegment(sg.segment),
     ...Object.fromEntries(DOMAINS.map((d) => [d.key, sg[d.key] ?? 0])),
   }));
 
   // ── Dados por área do conhecimento (filtrados) ────────────────────────────
-  const teacherSubjectsMap = new Map<string, string[]>();
-  for (const t of teachers) {
-    teacherSubjectsMap.set(t.uid, (t as any).subjects ?? []);
-  }
-
-  const areaResponsesMap = new Map<string, any[]>();
-  for (const r of schoolResponses) {
-    const subjects = teacherSubjectsMap.get(r.userId) ?? [];
+  // As disciplinas já vêm no sumário (denormalizadas no envio) — não precisa
+  // mais juntar com o professor por userId.
+  const areaResponsesMap = new Map<string, typeof schoolSummaries>();
+  for (const s of schoolSummaries) {
     const areas = [...new Set(
-      subjects
-        .map((s) => SUBJECT_OPTIONS.find((o) => o.value === s)?.area)
+      (s.subjects ?? [])
+        .map((sub) => SUBJECT_OPTIONS.find((o) => o.value === sub)?.area)
         .filter(Boolean) as string[],
     )];
     for (const area of areas) {
       if (!areaResponsesMap.has(area)) areaResponsesMap.set(area, []);
-      areaResponsesMap.get(area)!.push(r);
+      areaResponsesMap.get(area)!.push(s);
     }
   }
 
@@ -97,7 +92,7 @@ export function RelatoriosPage() {
     .filter((ka) => areaResponsesMap.has(ka.value) && activeAreas.includes(ka.value))
     .map((ka) => {
       const list = areaResponsesMap.get(ka.value)!;
-      const avg = responsesToAvgScores(list);
+      const avg = summariesToAvgScores(list);
       const entry: Record<string, any> = { area: ka.value, label: ka.label, total: list.length };
       if (avg) for (const { domain, score } of avg) entry[domain] = score;
       return entry;
@@ -205,7 +200,7 @@ export function RelatoriosPage() {
                       onClick={() => exportCsv(
                         'relatorio-segmento',
                         ['Segmento', 'Respostas', ...DOMAINS.map((d) => d.label)],
-                        groupBySegment(schoolResponses).map((r) => [
+                        groupSummariesBySegment(schoolSummaries).map((r) => [
                           formatSegment(r.segment),
                           r.total,
                           ...DOMAINS.map((d) => r[d.key] ? Number(r[d.key]).toFixed(1) : ''),
@@ -227,7 +222,7 @@ export function RelatoriosPage() {
                         render: (r: any) => r[d.key] ? Number(r[d.key]).toFixed(1) : '—',
                       })),
                     ]}
-                    rows={groupBySegment(segmentResponses)}
+                    rows={groupSummariesBySegment(segmentSummaries)}
                   />
                 </ContentCard>
               </Box>

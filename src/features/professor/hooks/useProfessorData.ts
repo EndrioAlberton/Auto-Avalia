@@ -5,7 +5,7 @@ import { UserRole } from '../../../types';
 import {
   getOrSeedQuestionnaire,
   getUserResponses,
-  getSchoolResponses,
+  getSchoolResponseSummaries,
   getPendingInvitationsByEmail,
   getSchool,
 } from '../../../services/firestoreService';
@@ -14,7 +14,7 @@ import type {
   EvolutionPoint} from '../../../services/analyticsService';
 import {
   answersToScores,
-  responsesToAvgScores,
+  summariesToAvgScores,
   buildEvolutionData,
   getStrengths,
   getImprovements,
@@ -100,9 +100,10 @@ export function useProfessorData(): ProfessorData {
         }
 
         if (currentUser.schoolId) {
-          const schoolR = await getSchoolResponses(currentUser.schoolId);
-          const others = schoolR.filter((r) => r.userId !== currentUser.uid);
-          const avg = others.length >= 1 ? responsesToAvgScores(others) : null;
+          // ponytail: sumários são anônimos, então não dá pra excluir "minha" resposta
+          // da média — a média da escola inclui o próprio professor.
+          const summaries = await getSchoolResponseSummaries(currentUser.schoolId);
+          const avg = summariesToAvgScores(summaries);
           if (!cancelled) setSchoolScores(avg);
         }
       } catch (e: unknown) {

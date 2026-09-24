@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import type { School, User, Invitation, Questionnaire } from '../../../types';
+import type { School, User, Invitation, Questionnaire, ResponseSummary } from '../../../types';
 import {
   getSchool,
   getTeachersBySchool,
-  getSchoolResponses,
+  getSchoolResponseSummaries,
   getSchoolInvitations,
   getOrSeedQuestionnaire,
 } from '../../../services/firestoreService';
 import type {
   DomainScore} from '../../../services/analyticsService';
 import {
-  responsesToAvgScores
+  summariesToAvgScores
 } from '../../../services/analyticsService';
 import { UserRole } from '../../../types';
 
@@ -20,7 +20,7 @@ export interface GestorData {
   hasSchool: boolean;
   teachers: User[];
   invitations: Invitation[];
-  schoolResponses: any[];
+  schoolSummaries: ResponseSummary[];
   schoolScores: DomainScore[] | null;
   responseRate: number;
   questionnaire: Questionnaire | null;
@@ -34,7 +34,7 @@ export function useGestorData(): GestorData {
   const [school, setSchool] = useState<School | null>(null);
   const [teachers, setTeachers] = useState<User[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [schoolResponses, setSchoolResponses] = useState<any[]>([]);
+  const [schoolSummaries, setSchoolSummaries] = useState<ResponseSummary[]>([]);
   const [schoolScores, setSchoolScores] = useState<DomainScore[] | null>(null);
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,11 +58,11 @@ export function useGestorData(): GestorData {
           return;
         }
 
-        const [sc, t, invites, resp, q] = await Promise.all([
+        const [sc, t, invites, summaries, q] = await Promise.all([
           getSchool(schoolId),
           getTeachersBySchool(schoolId),
           getSchoolInvitations(schoolId),
-          getSchoolResponses(schoolId),
+          getSchoolResponseSummaries(schoolId),
           getOrSeedQuestionnaire(UserRole.PROFESSOR),
         ]);
 
@@ -71,8 +71,8 @@ export function useGestorData(): GestorData {
         setSchool(sc);
         setTeachers(t);
         setInvitations(invites.filter((i) => i.status === 'pending'));
-        setSchoolResponses(resp);
-        setSchoolScores(responsesToAvgScores(resp));
+        setSchoolSummaries(summaries);
+        setSchoolScores(summariesToAvgScores(summaries));
         setQuestionnaire(q);
       } catch (e: unknown) {
         if (!cancelled) setError((e as Error)?.message ?? 'Erro ao carregar dados');
@@ -84,10 +84,9 @@ export function useGestorData(): GestorData {
     return () => { cancelled = true; };
   }, [currentUser, tick]);
 
-  const respondedSet = new Set(schoolResponses.map((r) => r.userId));
   const responseRate =
     teachers.length > 0
-      ? Math.round((teachers.filter((t) => respondedSet.has(t.uid)).length / teachers.length) * 100)
+      ? Math.round((teachers.filter((t) => (t as any).respondedQuestionnaire).length / teachers.length) * 100)
       : 0;
 
   return {
@@ -95,7 +94,7 @@ export function useGestorData(): GestorData {
     hasSchool: !!currentUser?.schoolId,
     teachers,
     invitations,
-    schoolResponses,
+    schoolSummaries,
     schoolScores,
     responseRate,
     questionnaire,
