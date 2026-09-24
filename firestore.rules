@@ -128,12 +128,20 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Gestores podem criar escolas; a regra usa o role do documento do usuário
       allow create: if isAuthenticated() &&
-                       hasAnyRole(['secretaria', 'admin', 'gestor']);
+                       hasAnyRole(['secretaria', 'admin', 'gestor']) &&
+                       request.resource.data.keys().hasOnly(
+                         ['name', 'networkId', 'region', 'district', 'state', 'city',
+                          'segments', 'gestorId', 'address', 'phone', 'contact',
+                          'createdAt', 'updatedAt']);
       // Gestor pode atualizar se for o gestorId da escola (novo) OU se já tiver schoolId igual
-      allow update: if (hasRole('gestor') &&
+      allow update: if ((hasRole('gestor') &&
                          (resource.data.get('gestorId', '') == request.auth.uid ||
                           belongsToSchool(schoolId))) ||
-                       hasAnyRole(['secretaria', 'admin']);
+                       hasAnyRole(['secretaria', 'admin'])) &&
+                       request.resource.data.keys().hasOnly(
+                         ['name', 'networkId', 'region', 'district', 'state', 'city',
+                          'segments', 'gestorId', 'address', 'phone', 'contact',
+                          'createdAt', 'updatedAt']);
       allow delete: if hasAnyRole(['secretaria', 'admin']);
     }
 
@@ -143,8 +151,15 @@ service cloud.firestore {
       // TODO: restringir a ['secretaria','admin'] depois de pré-popular os
       // questionários por script. Hoje getOrSeedQuestionnaire roda no cliente
       // (useProfessorData, QuestionarioPage, useGestorData) e precisa criar.
-      allow create: if isAuthenticated();
-      allow update, delete: if hasAnyRole(['secretaria', 'admin']);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasOnly(
+                         ['title', 'description', 'targetRole', 'questions', 'active',
+                          'createdAt', 'updatedAt']);
+      allow update: if hasAnyRole(['secretaria', 'admin']) &&
+                       request.resource.data.keys().hasOnly(
+                         ['title', 'description', 'targetRole', 'questions', 'active',
+                          'createdAt', 'updatedAt']);
+      allow delete: if hasAnyRole(['secretaria', 'admin']);
     }
 
     // ── Respostas (professores — autenticadas) ────────────────────────────────
@@ -161,8 +176,13 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                        request.resource.data.userId == request.auth.uid &&
                        callerHasSchool() &&
-                       request.resource.data.get('schoolId', '') == callerSchoolId();
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+                       request.resource.data.get('schoolId', '') == callerSchoolId() &&
+                       request.resource.data.keys().hasOnly(
+                         ['questionnaireId', 'userId', 'schoolId', 'schoolNameOther',
+                          'networkId', 'answers', 'segment', 'completedAt']);
+      allow update: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid &&
+                       changedKeys().hasOnly(['answers']);
       allow delete: if hasRole('admin');
     }
 
@@ -183,15 +203,11 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                        !('userId' in request.resource.data) &&
                        callerHasSchool() &&
-                       request.resource.data.get('schoolId', '') == callerSchoolId();
+                       request.resource.data.get('schoolId', '') == callerSchoolId() &&
+                       request.resource.data.keys().hasOnly(
+                         ['questionnaireId', 'schoolId', 'schoolNameOther', 'networkId',
+                          'segment', 'subjects', 'domainScores', 'completedAt']);
       allow update, delete: if hasRole('admin');
-    }
-
-    // ── Respostas anônimas (estudantes) ───────────────────────────────────────
-    match /anonymous_responses/{responseId} {
-      allow read: if hasAnyRole(['gestor', 'secretaria', 'admin']);
-      allow create: if true; // Anônimo — não exige autenticação
-      allow delete: if hasRole('admin');
     }
 
     // ── Relatórios ────────────────────────────────────────────────────────────
@@ -199,7 +215,10 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId ||
                      hasAnyRole(['gestor', 'secretaria', 'admin']));
-      allow write: if hasAnyRole(['gestor', 'secretaria', 'admin']);
+      allow create, update: if hasAnyRole(['gestor', 'secretaria', 'admin']) &&
+                       request.resource.data.keys().hasOnly(
+                         ['userId', 'schoolId', 'questionnaireId', 'generatedAt', 'data']);
+      allow delete: if hasAnyRole(['gestor', 'secretaria', 'admin']);
     }
 
     // ── Convites ──────────────────────────────────────────────────────────────
@@ -212,9 +231,20 @@ service cloud.firestore {
       // Gestor convida só para a própria escola, e só como professor
       allow create: if request.resource.data.role == 'professor' &&
                        (hasAnyRole(['secretaria', 'admin']) ||
-                        (hasRole('gestor') && belongsToSchool(request.resource.data.schoolId)));
-      // O convidado pode aceitar (status) e sinalizar que viu (viewedAt), nada mais
-      allow update: if hasAnyRole(['gestor', 'secretaria', 'admin']) ||
+                        (hasRole('gestor') && belongsToSchool(request.resource.data.schoolId))) &&
+                       request.resource.data.keys().hasOnly(
+                         ['email', 'role', 'schoolId', 'invitedBy', 'message', 'token',
+                          'status', 'createdAt', 'expiresAt']);
+      // Secretaria/admin gerenciam qualquer convite; gestor só os da própria
+      // escola (antes deixava qualquer gestor mexer em convite de escola
+      // alheia, sem restrição de campo nenhuma). O convidado só aceita
+      // (status) e sinaliza que viu (viewedAt), nada mais.
+      allow update: if (
+                         (hasAnyRole(['secretaria', 'admin']) ||
+                          (hasRole('gestor') && belongsToSchool(resource.data.schoolId))) &&
+                         changedKeys().hasOnly(
+                           ['status', 'token', 'expiresAt', 'viewedAt', 'message'])
+                       ) ||
                        (isAuthenticated() &&
                         resource.data.email == callerEmail() &&
                         changedKeys().hasOnly(['status', 'viewedAt']));
@@ -226,8 +256,15 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // TODO: restringir depois de pré-popular por script (mesmo caso de
       // questionnaires — seedDefaultSupportMaterials roda no cliente).
-      allow create: if isAuthenticated();
-      allow update, delete: if hasAnyRole(['secretaria', 'admin']);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasOnly(
+                         ['title', 'description', 'type', 'url', 'targetRole', 'tags',
+                          'createdAt']);
+      allow update: if hasAnyRole(['secretaria', 'admin']) &&
+                       request.resource.data.keys().hasOnly(
+                         ['title', 'description', 'type', 'url', 'targetRole', 'tags',
+                          'createdAt']);
+      allow delete: if hasAnyRole(['secretaria', 'admin']);
     }
   }
 }

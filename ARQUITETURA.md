@@ -191,13 +191,6 @@ firestore/
 │       ├── answers[]
 │       └── ...
 │
-├── anonymous_responses/      # Respostas anônimas (estudantes)
-│   └── {responseId}
-│       ├── anonymousId
-│       ├── questionnaireId
-│       ├── schoolId
-│       └── ...
-│
 ├── reports/                  # Relatórios gerados
 │   └── {reportId}
 │       ├── userId
