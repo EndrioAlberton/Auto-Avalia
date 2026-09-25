@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { School, User } from '../../../types';
+import { UserRole } from '../../../types';
 import { getAllSchools, getAllUsers, getSchoolResponseSummaries, getTeachersBySchool } from '../../../services/firestoreService';
 import type {
   DomainScore} from '../../../services/analyticsService';
@@ -152,8 +153,12 @@ export function useSecretariaData(): SecretariaData {
     return () => { cancelled = true; };
   }, [currentUser, tick]);
 
-  const totalTeachers = schoolsWithStats.reduce((s, sc) => s + sc.teachersCount, 0);
-  const totalResponded = schoolsWithStats.reduce((s, sc) => s + sc.respondedCount, 0);
+  // Soma direto de allUsers, não de schoolsWithStats: professores que só
+  // informaram schoolNameOther (escola fora da lista, sem schoolId) não
+  // aparecem em getTeachersBySchool(school.id) de nenhuma escola cadastrada.
+  const professors = allUsers.filter((u) => u.role === UserRole.PROFESSOR);
+  const totalTeachers = professors.length;
+  const totalResponded = professors.filter((u) => (u as any).respondedQuestionnaire).length;
 
   return {
     schools,

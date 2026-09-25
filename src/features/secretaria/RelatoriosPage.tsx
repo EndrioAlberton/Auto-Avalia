@@ -151,17 +151,21 @@ export function RelatoriosPage() {
         >
           <DataTable
             columns={[
-              { key: 'name', header: 'Escola', render: (r: any) => r.name },
+              { key: 'name', header: 'Escola', sortable: true, sortValue: (r: any) => r.name, render: (r: any) => r.name },
               {
                 key: 'teachers',
                 header: 'Responderam',
                 align: 'center' as const,
+                sortable: true,
+                sortValue: (r: any) => r.respondedCount,
                 render: (r: any) => `${r.respondedCount}/${r.teachersCount}`,
               },
               {
                 key: 'responseRate',
                 header: 'Taxa',
                 align: 'center' as const,
+                sortable: true,
+                sortValue: (r: any) => r.responseRate,
                 render: (r: any) => (
                   <Badge
                     label={`${r.responseRate}%`}
@@ -173,6 +177,8 @@ export function RelatoriosPage() {
                 key: d.key,
                 header: d.label,
                 align: 'center' as const,
+                sortable: true,
+                sortValue: (r: any) => r.avgScores?.find((s: any) => s.domain === d.key)?.score ?? -1,
                 render: (r: any) => {
                   const score = r.avgScores?.find((s: any) => s.domain === d.key)?.score;
                   return score > 0 ? score.toFixed(1) : '—';
@@ -182,6 +188,8 @@ export function RelatoriosPage() {
                 key: 'avgScore',
                 header: 'Geral',
                 align: 'center' as const,
+                sortable: true,
+                sortValue: (r: any) => r.avgScore,
                 render: (r: any) =>
                   r.avgScore > 0 ? (
                     <strong style={{ color: colors.accent }}>{r.avgScore.toFixed(1)}</strong>

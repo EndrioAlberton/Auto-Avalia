@@ -31,7 +31,7 @@ import { assignableRoles, roleLabel, ROLE_BADGE_VARIANTS } from '../../utils/rol
 import { colors, radius } from '../../components/ui/tokens';
 import Typography from '@mui/material/Typography';
 
-type RoleFilter = 'all' | UserRole.PROFESSOR | UserRole.GESTOR | UserRole.SECRETARIA;
+type RoleFilter = 'all' | 'not_professor' | UserRole.PROFESSOR | UserRole.GESTOR | UserRole.SECRETARIA;
 
 export function AdminPage() {
   const { loading, allUsers, schools, refreshData } = useSecretariaData();
@@ -55,7 +55,9 @@ export function AdminPage() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return allUsers.filter((u) => {
-      const matchRole = roleFilter === 'all' || u.role === roleFilter;
+      const matchRole =
+        roleFilter === 'all' ||
+        (roleFilter === 'not_professor' ? u.role !== UserRole.PROFESSOR : u.role === roleFilter);
       const matchSearch = !q ||
         u.displayName?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
@@ -161,6 +163,7 @@ export function AdminPage() {
 
   const FILTERS: { label: string; value: RoleFilter }[] = [
     { label: 'Todos', value: 'all' },
+    { label: 'Não professor', value: 'not_professor' },
     { label: 'Professor', value: UserRole.PROFESSOR },
     { label: 'Gestor', value: UserRole.GESTOR },
     { label: 'Secretaria', value: UserRole.SECRETARIA },

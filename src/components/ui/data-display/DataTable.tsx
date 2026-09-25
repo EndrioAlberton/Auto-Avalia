@@ -5,6 +5,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import TableSortLabel from '@mui/material/TableSortLabel';
 import TablePagination from '@mui/material/TablePagination';
 import MuiSkeleton from '@mui/material/Skeleton';
 import Box from '@mui/material/Box';
@@ -18,6 +19,8 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
   width?: string | number;
   align?: 'left' | 'center' | 'right';
+  sortable?: boolean;
+  sortValue?: (row: T) => string | number | null | undefined;
 }
 
 interface DataTableProps<T extends object> {
@@ -28,11 +31,44 @@ interface DataTableProps<T extends object> {
   rowsPerPage?: number;
 }
 
+type SortState = { key: string; dir: 'asc' | 'desc' };
+
 export function DataTable<T extends object>({ columns, rows, loading, emptyState, rowsPerPage: rpp = 10 }: DataTableProps<T>) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(rpp);
+  const [sort, setSort] = useState<SortState | null>(null);
 
-  const displayRows = rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const getSortValue = (col: Column<T>, row: T) =>
+    col.sortValue ? col.sortValue(row) : (row as Record<string, unknown>)[col.key] as string | number | null | undefined;
+
+  const sortedRows = React.useMemo(() => {
+    if (!sort) return rows;
+    const col = columns.find((c) => c.key === sort.key);
+    if (!col) return rows;
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const va = getSortValue(col, a);
+      const vb = getSortValue(col, b);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (typeof va === 'string' || typeof vb === 'string') return String(va).localeCompare(String(vb)) * dir;
+      return (va - vb) * dir;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, sort]);
+
+  const handleSort = (col: Column<T>) => {
+    if (!col.sortable) return;
+    setSort((prev) => {
+      if (prev?.key !== col.key) return { key: col.key, dir: 'asc' };
+      if (prev.dir === 'asc') return { key: col.key, dir: 'desc' };
+      return null;
+    });
+    setPage(0);
+  };
+
+  const displayRows = sortedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Box>
@@ -42,7 +78,17 @@ export function DataTable<T extends object>({ columns, rows, loading, emptyState
             <TableRow>
               {columns.map((col) => (
                 <TableCell key={col.key} align={col.align ?? 'left'} style={{ width: col.width }}>
-                  {col.header}
+                  {col.sortable ? (
+                    <TableSortLabel
+                      active={sort?.key === col.key}
+                      direction={sort?.key === col.key ? sort.dir : 'asc'}
+                      onClick={() => handleSort(col)}
+                    >
+                      {col.header}
+                    </TableSortLabel>
+                  ) : (
+                    col.header
+                  )}
                 </TableCell>
               ))}
             </TableRow>
