@@ -28,6 +28,9 @@ dist-ssr
 .firebase/
 .firebaserc
 firebase-debug.log
+
+# Exports de relatório (dados de produção, não versionar)
+public/*.csv
 firestore-debug.log
 ui-debug.log
 
